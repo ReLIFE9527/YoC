@@ -1,2 +1,2 @@
-# AliYunBased
+# YoC
 Practice to use AliYun
