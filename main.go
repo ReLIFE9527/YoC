@@ -1,6 +1,8 @@
 package main
 
-import "./Log"
+import (
+	"./Log"
+)
 
 func initAll() {
 	YoCLog.LogInit()
@@ -19,6 +21,4 @@ func main() {
 	initAll()
 	var ret= start()
 	exit(ret)
-	fmt.Println("Hello, World!")
-	return
 }
