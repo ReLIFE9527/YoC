@@ -19,4 +19,6 @@ func main() {
 	initAll()
 	var ret= start()
 	exit(ret)
+	fmt.Println("Hello, World!")
+	return
 }
