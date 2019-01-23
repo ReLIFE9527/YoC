@@ -6,7 +6,7 @@ import (
 )
 
 type dataClass struct {
-	device    string
+	deviceID    string
 	lastLogin string
 	this *map[string]interface{}
 }
@@ -51,4 +51,8 @@ func (obj dataClass)Get(key string) (interface{},error) {
 	} else {
 		return nil, errors.New("can't find target element")
 	}
+}
+
+func (obj dataClass)SetDeviceID(device string) {
+	obj.deviceID = device
 }
