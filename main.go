@@ -4,21 +4,29 @@ import (
 	"./Log"
 )
 
-func initAll() {
-	YoCLog.LogInit()
+func initAll() error {
+	var err = YoCLog.LogInit()
+	if err!=nil{
+		return err
+	}else{
+		return nil
+	}
 }
 
-func start() int64 {
+func start() error {
 	// TODO
-	return 0
+	return nil
 }
 
-func exit(ec int64) {
+func exit(ec error) {
 	YoCLog.LogExit(ec)
 }
 
 func main() {
-	initAll()
-	var ret= start()
-	exit(ret)
+	var ret= initAll()
+	if ret!=nil {
+		exit(ret)
+	}
+	ret = start()
+	defer exit(ret)
 }

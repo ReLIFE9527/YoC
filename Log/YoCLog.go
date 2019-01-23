@@ -11,16 +11,23 @@ import 	"../Common"
 var Log *log.Logger
 var logFile *os.File
 
-func LogInit() {
+func LogInit() error {
 	logFile =openLog()
 	Log = log.New(logFile,"",log.LstdFlags|log.Lshortfile|log.Ltime|log.Llongfile)
 	Log.Println("---------------Log Start---------------")
+	return nil
 }
 
-func LogExit(ec int64) {
-	Log.Printf("Exit with code %d\n",ec)
+func LogExit(ec error) {
+	defer func() {
+		_ = logFile.Close()
+	}()
+	if ec != nil {
+		Log.Println("exit with error", ec)
+	} else {
+		Log.Println("normal exit")
+	}
 	Log.Println("---------------Log End----------------")
-	_=logFile.Close()
 }
 
 func openLog() *os.File{
