@@ -38,3 +38,7 @@ func GetPath(path string) string {
 func GetLogPath(project string)string {
 	return GetPath("logs/" + project + ".log")
 }
+
+func GetDBPath(project string) string{
+	return GetPath("app/"+project+"db.json")
+}
