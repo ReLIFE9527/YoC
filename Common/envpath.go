@@ -31,7 +31,7 @@ func GetPath(path string) string {
 		ret = "/root/" + path
 	default:
 	}
-	fmt.Println("Log path now is" + ret)
+	fmt.Println("Log path now is " + ret)
 	return ret
 }
 

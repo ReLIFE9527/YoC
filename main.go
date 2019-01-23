@@ -1,7 +1,22 @@
 package main
 
-import "fmt"
+import "./Log"
+
+func initAll() {
+	YoCLog.LogInit()
+}
+
+func start() int64 {
+	// TODO
+	return 0
+}
+
+func exit(ec int64) {
+	YoCLog.LogExit(ec)
+}
 
 func main() {
-	fmt.Println("Hello, World!")
+	initAll()
+	var ret= start()
+	exit(ret)
 }
