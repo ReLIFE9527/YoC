@@ -26,7 +26,7 @@ func (obj dataClass)GetMap() map[string]interface{} {
 }
 
 func (obj dataClass)Set(key string,value interface{}) error {
-	if key!="this" {
+	if key=="this" {
 		return errors.New("dataClass write access error")
 	}
 	var field =reflect.ValueOf(&obj).FieldByName(key)
@@ -41,3 +41,14 @@ func (obj dataClass)Set(key string,value interface{}) error {
 	return nil
 }
 
+func (obj dataClass)Get(key string) (interface{},error) {
+	if key == "this" {
+		return nil, errors.New("can't find target element")
+	}
+	var value= reflect.ValueOf(obj).FieldByName(key)
+	if value.IsValid() {
+		return value, nil
+	} else {
+		return nil, errors.New("can't find target element")
+	}
+}
