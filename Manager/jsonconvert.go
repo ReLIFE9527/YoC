@@ -50,8 +50,9 @@ func JsonRead(device *map[string]*deviceStat) error {
 		if err != nil {
 			return err
 		}
-		(*device)[dc.deviceID] = new(deviceStat)
-		(*device)[dc.deviceID].Data = &dc
+		(*device)[dc.DeviceID] = new(deviceStat)
+		(*device)[dc.DeviceID].Data = &dc
+		bytes, err = scanner.ReadBytes('\n')
 	}
 	defer func() {
 		_ = file.Close()
@@ -64,21 +65,20 @@ func JsonWrite(device *map[string]*deviceStat) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 777)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+	defer func() {
+		_ = file.Close()
+	}()
 	if err != nil {
 		return err
 	}
-	var writer= bufio.NewWriter(file)
 	for _, ds := range *device {
-		dc, err := json.Marshal(ds)
+		dc, err := json.Marshal(ds.Data)
 		if err != nil {
 			return err
 		}
-		_, err = writer.Write(dc)
-		if err != nil {
-			return err
-		}
-		err = writer.WriteByte('\n')
+		dc = append(dc, '\n')
+		_, err = file.Write(dc)
 		if err != nil {
 			return err
 		}
