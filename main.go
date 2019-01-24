@@ -48,7 +48,7 @@ func start() error {
 			return re
 		default:
 			t := time.Now()
-			if t.Second() == startTime.Second() && lastTick!=t.Minute() {
+			if t.Second() == startTime.Second() && lastTick-t.Minute()%10==0 {
 				YoCLog.Log.Println("minute tick ", t)
 				lastTick = t.Minute()
 			}
