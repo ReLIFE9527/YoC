@@ -1,16 +1,29 @@
 package main
 
 import (
+	"./Common"
 	"./Log"
+	"encoding/json"
+	"os"
 )
+
+var global  = map[string]string{
+	"Version":"0.0.1"}
 
 func initAll() error {
 	var err = YoCLog.LogInit()
-	if err!=nil{
+	if err != nil {
 		return err
-	}else{
+	}
+	filePath := envpath.GetAppDir()
+	filePath += "/YoC.info"
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+	if err != nil {
 		return nil
 	}
+	version,err:=json.Marshal(global)
+	_, err = file.Write(version)
+	return err
 }
 
 func start() error {
