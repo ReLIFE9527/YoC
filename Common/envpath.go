@@ -1,44 +1,47 @@
 package envpath
 
 import (
-	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
-var osType = runtime.GOOS
-
-func GetPath(path string) string {
-	var ret string
-	var err error
-	switch osType {
+var appDir = func()string{
+	switch runtime.GOOS {
 	case "windows":
-		path = strings.Replace(path, "/", "\\", -1)
-		ret, err = filepath.Abs("./")
-		if err != nil {
-			log.Fatal("Can't get path")
+		path,err :=filepath.Abs("./")
+		if err!=nil{
+			log.Fatal(err)
 		}
-		if path[0] != '\\' {
-			path = "\\" + path
-		}
-		ret += path
+		return filepath.ToSlash(path)
 	case "linux":
-		if path[0] == '/' {
-			path = path[1:]
-		}
-		ret = "/root/" + path
+		return "/root/"
 	default:
+		log.Fatal("opration system type err: "+runtime.GOOS)
+		return ""
 	}
-	fmt.Println("Log path now is " + ret)
-	return ret
 }
 
-func GetLogPath(project string)string {
-	return GetPath("logs/" + project + ".log")
+func GetAppDir()string {
+	return appDir()
 }
 
-func GetDBPath(project string) string{
-	return GetPath("app/"+project+"db.json")
+func GetParentDir(srcPath string) (dstPath string,err error) {
+	if srcPath[len(srcPath)-1] == '/' {
+		srcPath = srcPath[:len(srcPath)-1]
+	}
+	var index = strings.LastIndexByte(srcPath, '/')
+	dstPath = srcPath[:index+1]
+	_, err = os.Stat(dstPath)
+	return dstPath, err
+}
+
+func CheckMakeDir(dir string) error {
+	_,err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(dir, os.ModePerm)
+	}
+	return err
 }
