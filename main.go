@@ -6,13 +6,16 @@ import (
 	"./Manager"
 	"encoding/json"
 	"os"
+	"runtime"
+	"time"
 )
 
 var global  = map[string]string{
 	"Version":"0.0.1"}
 
 func initAll() error {
-	var err = YoCLog.LogInit()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	var err= YoCLog.LogInit()
 	if err != nil {
 		return err
 	}
@@ -22,18 +25,35 @@ func initAll() error {
 	if err != nil {
 		return nil
 	}
-	version,err:=json.Marshal(global)
+	version, err := json.Marshal(global)
 	_, err = file.Write(version)
-	if err!=nil{
+	if err != nil {
 		return err
 	}
-	err = Data.InitDevicesData()
+	err = Data.IMInit()
 	return err
 }
 
 func start() error {
 	// TODO
-	return nil
+	var err error
+	var startTime =time.Now()
+	lastTick := startTime.Minute()
+	var IMChan =make(chan error,1)
+	go Data.IMStart(&IMChan)
+	for true {
+		select {
+		case re := <-IMChan:
+			return re
+		default:
+			t := time.Now()
+			if t.Second() == startTime.Second() && lastTick!=t.Minute() {
+				YoCLog.Log.Println("minute tick ", t)
+				lastTick = t.Minute()
+			}
+		}
+	}
+	return err
 }
 
 func exit(ec error) {
