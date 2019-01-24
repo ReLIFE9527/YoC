@@ -11,7 +11,7 @@ type dataClass struct {
 	this *map[string]interface{}
 }
 
-func (obj dataClass)GetMap() map[string]interface{} {
+func (obj *dataClass)GetMap() map[string]interface{} {
 	if obj.this == nil {
 		var key= reflect.TypeOf(obj)
 		var value= reflect.ValueOf(obj)
@@ -25,19 +25,20 @@ func (obj dataClass)GetMap() map[string]interface{} {
 	return *obj.this
 }
 
-func (obj dataClass)Set(key string,value interface{}) error {
-	if key=="this" {
+func (obj *dataClass)Set(key string,value interface{}) error {
+	if key == "this" {
 		return errors.New("dataClass write access error")
 	}
-	var field =reflect.ValueOf(&obj).FieldByName(key)
-	if !field.IsValid(){
+	var field= reflect.ValueOf(&obj).FieldByName(key)
+	if !field.IsValid() {
 		return errors.New("can't find target element")
 	}
-	if field.Type()==reflect.ValueOf(value).Type() {
+	if field.Type() == reflect.ValueOf(value).Type() {
 		field.Set(reflect.ValueOf(value))
-	}else{
+	} else {
 		return errors.New("field value type error")
 	}
+	obj.this = nil
 	return nil
 }
 
@@ -53,6 +54,10 @@ func (obj dataClass)Get(key string) (interface{},error) {
 	}
 }
 
-func (obj dataClass)SetDeviceID(device string) {
+func (obj *dataClass)SetDeviceID(device string) {
 	obj.deviceID = device
+}
+
+func (obj dataClass)GetDeviceID() string {
+	return obj.deviceID
 }

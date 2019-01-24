@@ -11,7 +11,7 @@ import (
 )
 
 var global  = map[string]string{
-	"Version":"0.0.1"}
+	"Version":"0.0.2"}
 
 func initAll() error {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -57,6 +57,10 @@ func start() error {
 }
 
 func exit(ec error) {
+	err := Data.IMShutDown()
+	if err != nil {
+		YoCLog.Log.Println(err)
+	}
 	YoCLog.LogExit(ec)
 }
 

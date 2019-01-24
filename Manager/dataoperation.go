@@ -1,5 +1,10 @@
 package Data
 
+import (
+	. "../Log"
+	"time"
+)
+
 type deviceStat struct {
 	isOnline bool
 	Data     *dataClass
@@ -34,4 +39,29 @@ func InitDevicesData() error {
 		return err
 	}
 	return nil
+}
+
+func DeviceSaveData()error {
+	err :=JsonWrite(devices)
+	return err
+}
+
+func DevicesOnline(device string) {
+	if (*devices)[device] == nil {
+		(*devices)[device] = new(deviceStat{})
+	}
+	(*devices)[device].Online()
+	err := (*devices)[device].Data.Set("lastLogin", time.Now().String())
+	Log.Println(err)
+}
+
+func DevicesOffline(device string) {
+	(*devices)[device].Offline()
+	err := (*devices)[device].Data.Set("lastLogin", time.Now().String())
+	Log.Println(err)
+}
+
+func DeviceUpdate(device string){
+	err := (*devices)[device].Data.Set("lastLogin", time.Now().String())
+	Log.Println(err)
 }
