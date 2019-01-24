@@ -37,7 +37,7 @@ func openLog() *os.File{
 	if err!=nil{
 		log.Println(err)
 	}else {
-		log.Println("log size now is ",stat.Size())
+		//log.Println("log size now is ",stat.Size())
 		if stat.Size() > 0x80000 {
 			err = os.Rename(filePath, filePath+"."+time.Now().Format("2006-1-2 15-04-05"))
 			if err != nil {
