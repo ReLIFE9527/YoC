@@ -17,7 +17,7 @@ var appDir = func()string{
 		}
 		return filepath.ToSlash(path)
 	case "linux":
-		return "/root/"
+		return "/root"
 	default:
 		log.Fatal("opration system type err: "+runtime.GOOS)
 		return ""
