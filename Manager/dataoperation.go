@@ -18,17 +18,20 @@ func (obj deviceStat) Stat() bool {
 }
 
 func (obj deviceStat) SetStat(stat bool) {
-	if (stat) {
+	if stat {
 		obj.Online()
 	} else {
 		obj.Offline()
 	}
 }
 
-var Devices *map[string]*deviceStat
+var devices *map[string]*deviceStat
 
-func InitDataBase() {
-	Devices = new(map[string]*deviceStat)
-	JsonRead(Devices)
+func InitDevicesData() error {
+	devices = new(map[string]*deviceStat)
+	err := JsonRead(devices)
+	if err != nil && !IsJsonEmpty(err) {
+		return err
+	}
+	return nil
 }
-

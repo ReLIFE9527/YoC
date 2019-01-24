@@ -3,6 +3,7 @@ package main
 import (
 	"./Common"
 	"./Log"
+	"./Manager"
 	"encoding/json"
 	"os"
 )
@@ -23,6 +24,10 @@ func initAll() error {
 	}
 	version,err:=json.Marshal(global)
 	_, err = file.Write(version)
+	if err!=nil{
+		return err
+	}
+	err = Data.InitDevicesData()
 	return err
 }
 

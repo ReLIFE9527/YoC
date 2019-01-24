@@ -5,69 +5,83 @@ import (
 	. "../Log"
 	"bufio"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 )
 
 var jsonPath = envpath.GetAppDir()+"/json/YoC.json"
+var jsonErrEmpty = errors.New("json is empty")
+
+func IsJsonEmpty(err error) bool {
+	if err == jsonErrEmpty {
+		return true
+	}
+	return false
+}
 
 func checkJsonDir()error{
 	var dir,_ = envpath.GetParentDir(jsonPath)
 	return envpath.CheckMakeDir(dir)
 }
 
-func JsonRead(device *map[string]*deviceStat) {
+func JsonRead(device *map[string]*deviceStat) error {
 	path, err := jsonPath, checkJsonDir()
 	if err != nil {
-		Log.Fatal(err)
+		return err
 	}
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
-		Log.Println("warning:failed to load database file at: " + path)
-		return
+		if os.IsNotExist(err) {
+			defer Log.Println("json file not exist")
+			return jsonErrEmpty
+		} else {
+			return err
+		}
 	}
-	var scanner= bufio.NewReader(file)
+	var scanner = bufio.NewReader(file)
 	bytes, err := scanner.ReadBytes('\n')
 	for err != io.EOF {
 		if err != nil {
-			Log.Fatal(err)
+			return err
 		}
 		var dc dataClass
 		err = json.Unmarshal(bytes, &dc)
 		if err != nil {
-			Log.Fatal(err)
+			return err
 		}
 		(*device)[dc.deviceID] = new(deviceStat)
 		(*device)[dc.deviceID].Data = &dc
 	}
 	defer func() {
-		var err= file.Close()
-		defer Log.Println(err)
+		_ = file.Close()
 	}()
+	return nil
 }
 
-func JsonWrite(device *map[string]*deviceStat) {
+func JsonWrite(device *map[string]*deviceStat) error {
 	path, err := jsonPath, checkJsonDir()
 	if err != nil {
-		Log.Fatal(err)
+		return err
 	}
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 777)
 	if err != nil {
-		Log.Fatal(err)
+		return err
 	}
 	var writer= bufio.NewWriter(file)
 	for _, ds := range *device {
 		dc, err := json.Marshal(ds)
 		if err != nil {
-			Log.Fatal(err)
+			return err
 		}
 		_, err = writer.Write(dc)
 		if err != nil {
-			Log.Fatal(err)
+			return err
 		}
 		err = writer.WriteByte('\n')
 		if err != nil {
-			Log.Fatal(err)
+			return err
 		}
 	}
+	return nil
 }
