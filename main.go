@@ -23,7 +23,7 @@ func initAll() error {
 	filePath += "/YoC.info"
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 	if err != nil {
-		return nil
+		return err
 	}
 	version, err := json.Marshal(global)
 	_, err = file.Write(version)
@@ -41,6 +41,7 @@ func start() error {
 	lastTick := startTime.Minute()
 	var IMChan =make(chan error,1)
 	go Data.IMStart(&IMChan)
+	//go Data.IMDeviceLogin("aaaa")
 	for true {
 		select {
 		case re := <-IMChan:
