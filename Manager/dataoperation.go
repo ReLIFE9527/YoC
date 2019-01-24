@@ -48,7 +48,7 @@ func DeviceSaveData()error {
 
 func DevicesOnline(device string) {
 	if (*devices)[device] == nil {
-		(*devices)[device] = new(deviceStat{})
+		(*devices)[device] = new(deviceStat)
 	}
 	(*devices)[device].Online()
 	err := (*devices)[device].Data.Set("lastLogin", time.Now().String())

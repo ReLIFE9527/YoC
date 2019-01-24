@@ -97,7 +97,7 @@ func IMShutDown() error{
 }
 
 func IMDeviceLogin(device string) {
-	devicesMap[device] = new(deviceOp{})
+	devicesMap[device] = new(deviceOp)
 	DevicesOnline(device)
 }
 
@@ -120,7 +120,7 @@ func IMDeviceRegister(device string,op string,fun interface{})error {
 }
 
 func IMClientLogin(client string) {
-	clientsMap[client] = new(deviceOp{})
+	clientsMap[client] = new(clientOp)
 }
 
 func IMClientLogout(client string) {
