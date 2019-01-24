@@ -21,7 +21,7 @@ func (obj *deviceOp)Register(key string,value interface{}) error {
 	if key=="this" {
 		return errors.New("dataClass write access error")
 	}
-	var field =reflect.ValueOf(&obj).FieldByName(key)
+	var field =reflect.ValueOf(obj).Elem().FieldByName(key)
 	if !field.IsValid(){
 		return errors.New("can't find target element")
 	}
@@ -40,7 +40,7 @@ func (obj *clientOp)Register(key string,value interface{}) error {
 	if key=="this" {
 		return errors.New("dataClass write access error")
 	}
-	var field =reflect.ValueOf(&obj).FieldByName(key)
+	var field =reflect.ValueOf(obj).Elem().FieldByName(key)
 	if !field.IsValid(){
 		return errors.New("can't find target element")
 	}
@@ -64,11 +64,16 @@ func IMInit() error {
 func IMStart(ch *chan error) {
 	var err error
 	//TODO
+	saveChan = make(chan string,10)
 	deviceStatUpt := make(chan string, 1)
 	deviceStatUpt <- ""
 	for true {
 		select {
 		case <-saveChan:
+			//log.Println(len(saveChan))
+			for len(saveChan)>0{
+				<-saveChan
+			}
 			err = DeviceSaveData()
 			if err != nil {
 				return
@@ -99,19 +104,22 @@ func IMShutDown() error{
 func IMDeviceLogin(device string) {
 	devicesMap[device] = new(deviceOp)
 	DevicesOnline(device)
+	saveChan <- ""
 }
 
 func IMDeviceLogout(device string) {
 	DevicesOffline(device)
 	delete(devicesMap, device)
+	saveChan <- ""
 }
 
 func IMDeviceStatUpt() {
-	for device,op:= range devicesMap {
+	for device, op := range devicesMap {
 		if op != nil {
 			DeviceUpdate(device)
 		}
 	}
+	//saveChan <- ""
 }
 
 func IMDeviceRegister(device string,op string,fun interface{})error {

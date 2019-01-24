@@ -6,9 +6,9 @@ import (
 )
 
 type dataClass struct {
-	deviceID    string
-	lastLogin string
-	this *map[string]interface{}
+	DeviceID  string
+	LastLogin string
+	this      *map[string]interface{}
 }
 
 func (obj *dataClass)GetMap() map[string]interface{} {
@@ -29,7 +29,7 @@ func (obj *dataClass)Set(key string,value interface{}) error {
 	if key == "this" {
 		return errors.New("dataClass write access error")
 	}
-	var field= reflect.ValueOf(&obj).FieldByName(key)
+	var field= reflect.ValueOf(obj).Elem().FieldByName(key)
 	if !field.IsValid() {
 		return errors.New("can't find target element")
 	}
@@ -55,9 +55,9 @@ func (obj dataClass)Get(key string) (interface{},error) {
 }
 
 func (obj *dataClass)SetDeviceID(device string) {
-	obj.deviceID = device
+	obj.DeviceID = device
 }
 
 func (obj dataClass)GetDeviceID() string {
-	return obj.deviceID
+	return obj.DeviceID
 }
