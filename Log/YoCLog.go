@@ -12,9 +12,9 @@ var Log *log.Logger
 var logFile *os.File
 
 func LogInit() error {
-	log.SetFlags(log.LstdFlags|log.Lshortfile|log.Ltime|log.Llongfile)
+	log.SetFlags(log.LstdFlags|log.Lshortfile|log.Ltime)
 	logFile =openLog()
-	Log = log.New(logFile,"",log.LstdFlags|log.Lshortfile|log.Ltime|log.Llongfile)
+	Log = log.New(logFile,"",log.LstdFlags|log.Lshortfile|log.Ltime)
 	Log.Println("---------------Log Start---------------")
 	return nil
 }
