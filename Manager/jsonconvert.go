@@ -73,6 +73,9 @@ func JsonWrite(device *map[string]*deviceStat) error {
 		return err
 	}
 	for _, ds := range *device {
+		if ds==nil{
+			continue
+		}
 		dc, err := json.Marshal(ds.Data)
 		if err != nil {
 			return err
