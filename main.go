@@ -41,7 +41,6 @@ func start() error {
 	lastTick := startTime.Minute()
 	var IMChan =make(chan error,1)
 	go Data.IMStart(&IMChan)
-	//go Data.IMDeviceLogin("aaaa")
 	for true {
 		select {
 		case re := <-IMChan:

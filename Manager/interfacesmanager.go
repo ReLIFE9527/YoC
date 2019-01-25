@@ -70,6 +70,7 @@ func IMStart(ch *chan error) {
 	var err error
 	//TODO
 	chanMap["deviceUpt"] <- ""
+	chanMap["remove"] <-""
 	for true {
 		select {
 		case <-chanMap["save"]:
@@ -93,13 +94,14 @@ func IMStart(ch *chan error) {
 				ch <- ""
 			}(chanMap["deviceUpt"])
 		case <-chanMap["remove"]:
-			var remove= make(chan string,1)
+			var remove = make(chan string, 1)
 			go func(ch chan string) {
 				imDeviceRemoveCheck()
-				ch<-""
+				ch <- ""
 			}(remove)
 			<-remove
 		default:
+			time.Sleep(time.Microsecond)
 		}
 	}
 	defer func(e error) {
@@ -133,8 +135,8 @@ func imDeviceStatUpt() {
 
 }
 
-func imDeviceRemoveCheck(){
-	
+func imDeviceRemoveCheck() {
+	deviceRemoveOutDate()
 }
 
 func IMDeviceLogin(device string) {
@@ -169,7 +171,8 @@ func IMClientRegister(client string,op string,fun interface{})error {
 
 var chanMap map[string]chan string
 func imChanInit() {
+	chanMap = make(map[string]chan string)
 	for name,buffer := range selectChanList {
-		chanMap[name] = make(chan string, buffer)
+		chanMap[name] =  make(chan string,buffer)
 	}
 }
