@@ -53,21 +53,36 @@ func devicesOnline(device string) {
 	}
 	devices[device].Online()
 	devices[device].Data.SetDeviceID(device)
-	err := devices[device].Data.Set("LastLogin", time.Now().String())
+	err := devices[device].Data.Set("LastLogin", time.Now())
 	Log.Println(err)
 }
 
 func devicesOffline(device string) {
 	devices[device].Offline()
-	err := devices[device].Data.Set("LastLogin", time.Now().String())
+	err := devices[device].Data.Set("LastLogin", time.Now())
 	Log.Println(err)
 }
 
 func deviceUpdate(device string){
-	err := devices[device].Data.Set("LastLogin", time.Now().String())
-	Log.Println(err)
+	if devices[device] != nil {
+
+		err := devices[device].Data.Set("LastLogin", time.Now())
+		Log.Println(err)
+	}else{
+		devicesOnline(device)
+	}
 }
 
-func deviceRemoveOutDate(){
-
+func deviceRemoveOutDate() {
+	for i, device := range devices {
+		if !device.isOnline {
+			var t1, t2 = time.Now(), device.Data.LastLogin.AddDate(0, 0, 15)
+			var s1,s2 = t1.String(),t2.String()
+			Log.Println(s1+"\n"+s2)
+			if (t1.YearDay() > t2.YearDay() && t1.Year() == t2.YearDay()) || t1.Year() > t2.Year() {
+				devices[i] = nil
+			}
+		}
+	}
+	Log.Println(deviceSaveData())
 }

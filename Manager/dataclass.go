@@ -3,11 +3,12 @@ package Data
 import (
 	"errors"
 	"reflect"
+	"time"
 )
 
 type dataClass struct {
 	DeviceID  string
-	LastLogin string
+	LastLogin time.Time
 	this      *map[string]interface{}
 }
 
