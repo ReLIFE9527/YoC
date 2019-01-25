@@ -32,7 +32,7 @@ func (obj deviceStat) SetStat(stat bool) {
 
 var devices map[string]*deviceStat
 
-func InitDevicesData() error {
+func initDevicesData() error {
 	devices = make(map[string]*deviceStat)
 	err := JsonRead(&devices)
 	if err != nil && !IsJsonEmpty(err) {
@@ -41,12 +41,12 @@ func InitDevicesData() error {
 	return nil
 }
 
-func DeviceSaveData()error {
+func deviceSaveData()error {
 	err :=JsonWrite(&devices)
 	return err
 }
 
-func DevicesOnline(device string) {
+func devicesOnline(device string) {
 	if devices[device] == nil {
 		devices[device] = new(deviceStat)
 		devices[device].Data = new(dataClass)
@@ -57,13 +57,17 @@ func DevicesOnline(device string) {
 	Log.Println(err)
 }
 
-func DevicesOffline(device string) {
+func devicesOffline(device string) {
 	devices[device].Offline()
 	err := devices[device].Data.Set("LastLogin", time.Now().String())
 	Log.Println(err)
 }
 
-func DeviceUpdate(device string){
+func deviceUpdate(device string){
 	err := devices[device].Data.Set("LastLogin", time.Now().String())
 	Log.Println(err)
+}
+
+func deviceRemoveOutDate(){
+
 }

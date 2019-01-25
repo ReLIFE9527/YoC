@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+var selectChanList  = map[string]int64{ //List of [function name]channel buffer
+	"deviceUpt": 1,
+	"remove":    1,
+	"save":      10,
+}
+
 type IMError struct {
 	Obj string
 	Op string
@@ -53,42 +59,46 @@ func (obj *clientOp)Register(key string,value interface{}) error {
 }
 var clientsMap map[string]*clientOp
 
-var saveChan chan string
-
 func IMInit() error {
 	devicesMap = make(map[string]*deviceOp)
-	err := InitDevicesData()
+	imChanInit()
+	err := initDevicesData()
 	return err
 }
 
 func IMStart(ch *chan error) {
 	var err error
 	//TODO
-	saveChan = make(chan string,10)
-	deviceStatUpt := make(chan string, 1)
-	deviceStatUpt <- ""
+	chanMap["deviceUpt"] <- ""
 	for true {
 		select {
-		case <-saveChan:
+		case <-chanMap["save"]:
 			//log.Println(len(saveChan))
-			for len(saveChan)>0{
-				<-saveChan
+			for len(chanMap["save"]) > 0 {
+				<-chanMap["save"]
 			}
-			err = DeviceSaveData()
+			err = deviceSaveData()
 			if err != nil {
 				return
 			}
-		case <-deviceStatUpt:
+		case <-chanMap["deviceUpt"]:
 			go func(ch chan string) {
 				upt := make(chan string, 1)
 				go func(ch chan string) {
-					IMDeviceStatUpt()
-					upt <- ""
+					imDeviceStatUpt()
+					ch <- ""
 				}(upt)
 				time.Sleep(time.Second * 5)
 				<-upt
-				deviceStatUpt <- ""
-			}(deviceStatUpt)
+				ch <- ""
+			}(chanMap["deviceUpt"])
+		case <-chanMap["remove"]:
+			var remove= make(chan string,1)
+			go func(ch chan string) {
+				imDeviceRemoveCheck()
+				ch<-""
+			}(remove)
+			<-remove
 		default:
 		}
 	}
@@ -101,25 +111,42 @@ func IMShutDown() error{
 	return nil
 }
 
+const statUptTime = time.Second*5
+const saveUpt = int64(time.Hour/statUptTime)
+const removeUpt = int64(time.Hour*24/statUptTime)
+var statUptCount int64
+
+func imDeviceStatUpt() {
+	for device, op := range devicesMap {
+		if op != nil {
+			deviceUpdate(device)
+		}
+	}
+	statUptCount ++
+	if statUptCount % saveUpt ==0 {
+		chanMap["save"] <- ""
+	}
+	if statUptCount>removeUpt {
+		chanMap["remove"] <- ""
+		statUptCount = 0
+	}
+
+}
+
+func imDeviceRemoveCheck(){
+	
+}
+
 func IMDeviceLogin(device string) {
 	devicesMap[device] = new(deviceOp)
-	DevicesOnline(device)
-	saveChan <- ""
+	devicesOnline(device)
+	chanMap["save"] <- ""
 }
 
 func IMDeviceLogout(device string) {
-	DevicesOffline(device)
+	devicesOffline(device)
 	delete(devicesMap, device)
-	saveChan <- ""
-}
-
-func IMDeviceStatUpt() {
-	for device, op := range devicesMap {
-		if op != nil {
-			DeviceUpdate(device)
-		}
-	}
-	//saveChan <- ""
+	chanMap["save"] <- ""
 }
 
 func IMDeviceRegister(device string,op string,fun interface{})error {
@@ -138,4 +165,11 @@ func IMClientLogout(client string) {
 func IMClientRegister(client string,op string,fun interface{})error {
 	err := clientsMap[client].Register(op, fun)
 	return &IMError{client, "client register", err}
+}
+
+var chanMap map[string]chan string
+func imChanInit() {
+	for name,buffer := range selectChanList {
+		chanMap[name] = make(chan string, buffer)
+	}
 }
