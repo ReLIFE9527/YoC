@@ -2,6 +2,7 @@ package main
 
 import (
 	"./Common"
+	"./Device"
 	"./Log"
 	"./Manager"
 	"encoding/json"
@@ -31,23 +32,30 @@ func initAll() error {
 		return err
 	}
 	err = Data.IMInit()
+	if err!=nil{
+		return err
+	}
+	err = Device.LinkInit()
 	return err
 }
 
 func start() error {
 	// TODO
 	var err error
-	var startTime =time.Now()
+	var startTime= time.Now()
 	lastTick := startTime.Minute()
-	var IMChan =make(chan error,1)
-	go Data.IMStart(&IMChan)
+	var IMChan, DeviceChan= make(chan error, 1), make(chan error, 1)
+	go Data.IMStart(IMChan)
+	go Device.LinkHandle(DeviceChan)
 	for true {
 		select {
 		case re := <-IMChan:
 			return re
+		case re := <-DeviceChan:
+			return re
 		default:
 			t := time.Now()
-			if t.Second() == startTime.Second() && lastTick-t.Minute()%10==0 {
+			if t.Second() == startTime.Second() && lastTick-t.Minute()%10 == 0 {
 				YoCLog.Log.Println("minute tick ", t)
 				lastTick = t.Minute()
 			}
