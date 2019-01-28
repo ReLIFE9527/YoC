@@ -3,6 +3,7 @@ package Device
 import (
 	. "../Log"
 	. "../Manager"
+	"fmt"
 	"net"
 )
 
@@ -11,6 +12,12 @@ func handleConnection(conn net.Conn) (err error) {
 	IMDeviceLogin(addr)
 	//TODO
 	for {
+		var buffer= make([]byte, 128)
+		n, err := conn.Read(buffer)
+		if err == nil && n > 0 {
+			data := buffer[:n]
+			fmt.Println(data)
+		}
 		if false {
 			break
 		}
