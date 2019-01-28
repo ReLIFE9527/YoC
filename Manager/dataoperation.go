@@ -76,13 +76,16 @@ func deviceUpdate(device string){
 func deviceRemoveOutDate() {
 	for i, device := range devices {
 		if !device.isOnline {
-			var t1, t2 = time.Now(), device.Data.LastLogin.AddDate(0, 0, 15)
-			var s1,s2 = t1.String(),t2.String()
-			Log.Println(s1+"\n"+s2)
+			var t1, t2= time.Now(), device.Data.LastLogin.AddDate(0, 0, 15)
+			var s1, s2= t1.String(), t2.String()
+			Log.Println(s1 + "\n" + s2)
 			if (t1.YearDay() > t2.YearDay() && t1.Year() == t2.YearDay()) || t1.Year() > t2.Year() {
 				devices[i] = nil
 			}
 		}
 	}
-	Log.Println(deviceSaveData())
+	err := deviceSaveData()
+	if err != nil {
+		Log.Println(err)
+	}
 }
