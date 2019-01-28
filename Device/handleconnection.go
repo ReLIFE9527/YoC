@@ -10,6 +10,7 @@ import (
 func handleConnection(conn net.Conn) (err error) {
 	var addr = conn.RemoteAddr().String()
 	IMDeviceLogin(addr)
+	Log.Println(addr," : connected")
 	//TODO
 	for {
 		var buffer= make([]byte, 128)
