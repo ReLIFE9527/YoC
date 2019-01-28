@@ -8,14 +8,14 @@ import (
 )
 
 func handleConnection(conn net.Conn) (err error) {
-	var addr= conn.RemoteAddr().String()
+	var addr = conn.RemoteAddr().String()
 	IMDeviceLogin(addr)
 	//TODO
 	for {
 		var buffer= make([]byte, 128)
 		n, err := conn.Read(buffer)
 		if err == nil && n > 0 {
-			data := buffer[:n]
+			data := string(buffer[:n])
 			fmt.Println(data)
 		}
 		if false {
