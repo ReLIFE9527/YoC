@@ -66,7 +66,7 @@ func IMInit() error {
 	return err
 }
 
-func IMStart(ch *chan error) {
+func IMStart(ch chan error) {
 	var err error
 	//TODO
 	chanMap["deviceUpt"] <- ""
@@ -105,7 +105,7 @@ func IMStart(ch *chan error) {
 		}
 	}
 	defer func(e error) {
-		*ch <- e
+		ch <- e
 	}(err)
 }
 
