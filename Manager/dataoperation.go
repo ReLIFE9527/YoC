@@ -62,7 +62,9 @@ func devicesOnline(device string) {
 func devicesOffline(device string) {
 	devices[device].Offline()
 	err := devices[device].Data.Set("LastLogin", time.Now())
-	Log.Println(err)
+	if err != nil {
+		Log.Println(err)
+	}
 }
 
 func deviceUpdate(device string) {
