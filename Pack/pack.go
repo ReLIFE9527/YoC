@@ -13,11 +13,11 @@ type PacketError struct {
 	Err error
 }
 func (e *PacketError) Error() string {
-	return e.Obj + " " + e.Op + ": " + e.Err.Error()
+	return e.Obj + " {" + e.Op + ": " + e.Err.Error() + "}"
 }
 
 func PackString(src string) (dst string) {
-	dst = "PackHeader//Length:" + strconv.FormatInt(int64(len(src)), 10) + "//" + src + "//PackTail"
+	dst = "PackHeader//Length:" + strconv.FormatInt(int64(len(src)), 10) + "//" + src + "//PackTail//"
 	return dst
 }
 
@@ -26,9 +26,9 @@ func DePackString(src string)(dst []string,n int,err error) {
 	for i := 0; i < len(strArr); i++ {
 		if strArr[i] == "PackHeader" {
 			length, err := getLength(strArr[i+1])
-			if err != nil || len(strArr[i+2]) != int(length) {
+			if err != nil || len(strArr[i+2]) != int(length)||strArr[i+3]!="PackTail" {
 				Log.Println(err)
-				i += 2
+				i += 3
 				continue
 			}else {
 				n++
