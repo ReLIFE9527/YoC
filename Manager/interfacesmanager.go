@@ -18,7 +18,7 @@ type IMError struct {
 	Err error
 }
 func (e *IMError) Error() string {
-	return e.Obj + " " + e.Op + ": " + e.Err.Error()
+	return e.Obj + " {" + e.Op + ": " + e.Err.Error() + "}"
 }
 
 type deviceOp struct {
