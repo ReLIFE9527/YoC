@@ -14,7 +14,7 @@ var writeOp = make(map[string][]string)
 var writeMutex = make(map[string]*sync.Mutex)
 
 func handleConnection(conn net.Conn) (err error) {
-	var addr, beatBreak, beatFresh = conn.RemoteAddr().String(), false, make(chan string)
+	var addr, beatBreak, beatFresh= conn.RemoteAddr().String(), false, make(chan string)
 	IMDeviceLogin(addr)
 	writeOp[addr] = make([]string, 0)
 	writeMutex[addr] = new(sync.Mutex)
@@ -30,7 +30,7 @@ func handleConnection(conn net.Conn) (err error) {
 			err = dispatchOp(op, conn)
 			beatFresh <- ""
 		} else {
-			var buffer = make([]byte, 128)
+			var buffer= make([]byte, 128)
 			err = conn.SetReadDeadline(time.Now().Add(time.Microsecond * 50))
 			if err != nil {
 				Log.Println(err)
@@ -63,7 +63,7 @@ func handleConnection(conn net.Conn) (err error) {
 		if err != nil {
 			Log.Println(err)
 		} else {
-			Log.Println("connection closed :", addr)
+			Log.Println(addr, " : connection closed")
 		}
 	}()
 	return err
