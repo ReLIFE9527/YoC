@@ -12,7 +12,7 @@ import (
 )
 
 var global  = map[string]string{
-	"Version":"0.0.2"}
+	"Version":"0.0.5"}
 
 func initAll() error {
 	runtime.GOMAXPROCS(runtime.NumCPU())
