@@ -162,7 +162,9 @@ func IMDeviceLogout(device string) {
 
 func IMDeviceRegister(device string, op string, fun interface{}) error {
 	err := devicesMap[device].Register(op, fun)
-	return &IMError{device, "device register", err}
+	if err != nil {
+		return &IMError{device, "device register", err}
+	}
 }
 
 func IMClientLogin(client string) {
@@ -175,7 +177,9 @@ func IMClientLogout(client string) {
 
 func IMClientRegister(client string, op string, fun interface{}) error {
 	err := clientsMap[client].Register(op, fun)
-	return &IMError{client, "client register", err}
+	if err != nil {
+		return &IMError{client, "device register", err}
+	}
 }
 
 var chanMap map[string]chan string
