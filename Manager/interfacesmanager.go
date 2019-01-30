@@ -3,10 +3,11 @@ package Data
 import (
 	"errors"
 	"reflect"
+	"sync"
 	"time"
 )
 
-var selectChanList  = map[string]int64{ //List of [function name]channel buffer
+var selectChanList = map[string]int64{ //List of [function name]channel buffer
 	"deviceUpt": 1,
 	"remove":    1,
 	"save":      10,
@@ -14,49 +15,56 @@ var selectChanList  = map[string]int64{ //List of [function name]channel buffer
 
 type IMError struct {
 	Obj string
-	Op string
+	Op  string
 	Err error
 }
+
 func (e *IMError) Error() string {
 	return e.Obj + " {" + e.Op + ": " + e.Err.Error() + "}"
 }
 
 type deviceOp struct {
+	OpList     []string
+	WriteMutex *sync.Mutex
 }
-func (obj *deviceOp)Register(key string,value interface{}) error {
-	if key=="this" {
+
+func (obj *deviceOp) Register(key string, value interface{}) error {
+	if key == "this" {
 		return errors.New("dataClass write access error")
 	}
-	var field =reflect.ValueOf(obj).Elem().FieldByName(key)
-	if !field.IsValid(){
+	var field = reflect.ValueOf(obj).Elem().FieldByName(key)
+	if !field.IsValid() {
 		return errors.New("can't find target element")
 	}
-	if field.Type()==reflect.ValueOf(value).Type() {
+	if field.Type() == reflect.ValueOf(value).Type() {
 		field.Set(reflect.ValueOf(value))
-	}else{
+	} else {
 		return errors.New("field value type error")
 	}
 	return nil
 }
+
 var devicesMap map[string]*deviceOp
 
 type clientOp struct {
 }
-func (obj *clientOp)Register(key string,value interface{}) error {
-	if key=="this" {
+
+func (obj *clientOp) Register(key string, value interface{}) error {
+	if key == "this" {
 		return errors.New("dataClass write access error")
 	}
-	var field =reflect.ValueOf(obj).Elem().FieldByName(key)
-	if !field.IsValid(){
+	var field = reflect.ValueOf(obj).Elem().FieldByName(key)
+	if !field.IsValid() {
 		return errors.New("can't find target element")
 	}
-	if field.Type()==reflect.ValueOf(value).Type() {
+	if field.Type() == reflect.ValueOf(value).Type() {
 		field.Set(reflect.ValueOf(value))
-	}else{
+	} else {
 		return errors.New("field value type error")
 	}
 	return nil
 }
+
 var clientsMap map[string]*clientOp
 
 func IMInit() error {
@@ -70,7 +78,7 @@ func IMStart(ch chan error) {
 	var err error
 	//TODO
 	chanMap["deviceUpt"] <- ""
-	chanMap["remove"] <-""
+	chanMap["remove"] <- ""
 	for true {
 		select {
 		case <-chanMap["save"]:
@@ -109,13 +117,14 @@ func IMStart(ch chan error) {
 	}(err)
 }
 
-func IMShutDown() error{
+func IMShutDown() error {
 	return nil
 }
 
-const statUptTime = time.Second*5
-const saveUpt = int64(time.Hour/statUptTime)
-const removeUpt = int64(time.Hour*24/statUptTime)
+const statUptTime = time.Second * 5
+const saveUpt = int64(time.Hour / statUptTime)
+const removeUpt = int64(time.Hour * 24 / statUptTime)
+
 var statUptCount int64
 
 func imDeviceStatUpt() {
@@ -124,11 +133,11 @@ func imDeviceStatUpt() {
 			deviceUpdate(device)
 		}
 	}
-	statUptCount ++
-	if statUptCount % saveUpt ==0 {
+	statUptCount++
+	if statUptCount%saveUpt == 0 {
 		chanMap["save"] <- ""
 	}
-	if statUptCount>removeUpt {
+	if statUptCount > removeUpt {
 		chanMap["remove"] <- ""
 		statUptCount = 0
 	}
@@ -151,7 +160,7 @@ func IMDeviceLogout(device string) {
 	chanMap["save"] <- ""
 }
 
-func IMDeviceRegister(device string,op string,fun interface{})error {
+func IMDeviceRegister(device string, op string, fun interface{}) error {
 	err := devicesMap[device].Register(op, fun)
 	return &IMError{device, "device register", err}
 }
@@ -164,15 +173,16 @@ func IMClientLogout(client string) {
 	delete(clientsMap, client)
 }
 
-func IMClientRegister(client string,op string,fun interface{})error {
+func IMClientRegister(client string, op string, fun interface{}) error {
 	err := clientsMap[client].Register(op, fun)
 	return &IMError{client, "client register", err}
 }
 
 var chanMap map[string]chan string
+
 func imChanInit() {
 	chanMap = make(map[string]chan string)
-	for name,buffer := range selectChanList {
-		chanMap[name] =  make(chan string,buffer)
+	for name, buffer := range selectChanList {
+		chanMap[name] = make(chan string, buffer)
 	}
 }
