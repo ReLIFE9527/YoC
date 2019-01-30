@@ -29,17 +29,25 @@ func DePackString(src string) (dst string, err error) {
 	if int(src[len(src)-1]) == PackTailByte {
 		src = src[:len(src)-1]
 	}
-	strArr := strings.Split(src, "//")
+	strArr := strings.SplitAfter(src, "//")
 	for i := 0; i < len(strArr); i++ {
-		if strArr[i] == "PackHeader" {
+		if strArr[i] == "PackHeader//" {
 			length, err := getLength(strArr[i+1])
-			if err != nil || len(strArr[i+2]) != int(length) || strArr[i+3] != "PackTail" {
-				Log.Println(err)
-				i += 3
-				continue
-			} else {
-				dst = strArr[i+2]
-				break
+			if err != nil {
+				return "", nil
+			}
+			var j = i + 3
+			for ; j < len(strArr); j++ {
+				if strArr[j] == "PackTail//" {
+					break
+				}
+			}
+			for k := i + 2; k < j; k++ {
+				dst += strArr[k]
+			}
+			dst = dst[:len(dst)-2]
+			if int64(len(dst)) != length {
+				Log.Println("length err : ", src, " ", dst)
 			}
 		}
 	}
