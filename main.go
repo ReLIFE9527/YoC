@@ -12,11 +12,12 @@ import (
 )
 
 var global  = map[string]string{
-	"Version":"0.0.5"}
+	"Version": "0.0.5",
+}
 
 func initAll() error {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	var err= YoCLog.LogInit()
+	var err = YoCLog.LogInit()
 	if err != nil {
 		return err
 	}
@@ -32,7 +33,7 @@ func initAll() error {
 		return err
 	}
 	err = Data.IMInit()
-	if err!=nil{
+	if err != nil {
 		return err
 	}
 	err = Device.LinkInit()
@@ -42,9 +43,9 @@ func initAll() error {
 func start() error {
 	// TODO
 	var err error
-	var startTime= time.Now()
+	var startTime = time.Now()
 	lastTick := startTime.Minute()
-	var IMChan, DeviceChan= make(chan error, 1), make(chan error, 1)
+	var IMChan, DeviceChan = make(chan error, 1), make(chan error, 1)
 	go Data.IMStart(IMChan)
 	go Device.LinkHandle(DeviceChan)
 	for true {
@@ -73,8 +74,8 @@ func exit(ec error) {
 }
 
 func main() {
-	var ret= initAll()
-	if ret!=nil {
+	var ret = initAll()
+	if ret != nil {
 		exit(ret)
 	}
 	ret = start()
