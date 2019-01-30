@@ -26,8 +26,8 @@ func initAll() error {
 	if err != nil {
 		return err
 	}
-	version, err := json.Marshal(global)
-	_, err = file.Write(version)
+	globalInfo, err := json.Marshal(global)
+	_, err = file.Write(globalInfo)
 	if err != nil {
 		return err
 	}
