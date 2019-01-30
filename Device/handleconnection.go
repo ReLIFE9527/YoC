@@ -3,6 +3,10 @@ package Device
 import (
 	. "../Log"
 	. "../Manager"
+	"../Pack"
+	"bufio"
+	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -14,7 +18,14 @@ var writeOp = make(map[string][]string)
 var writeMutex = make(map[string]*sync.Mutex)
 
 func handleConnection(conn net.Conn) (err error) {
-	var addr, beatBreak, beatFresh = conn.RemoteAddr().String(), false, make(chan string)
+	var beatBreak, beatFresh = false, make(chan string)
+	addr, err := loginProgress(conn)
+	if err != nil {
+		Log.Println(conn.RemoteAddr().String(), " : ", err)
+	} else {
+		_ = conn.Close()
+		return nil
+	}
 	login(addr)
 	go connectionHeartBeats(&beatBreak, beatFresh)
 	//TODO
@@ -109,5 +120,97 @@ func basicOperationRegister(device string) {
 	err = IMDeviceRegister(device, "WriteMutex", writeMutex[device])
 	if err != nil {
 		Log.Println(err)
+	}
+}
+
+func loginProgress(conn net.Conn) (device string, err error) {
+	var loginDone, loginStart, loginFail = "{\"login\":\"done\"}", "{\"login\":\"start\"}", "{\"login\":\"fail\"}"
+	err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginStart)))
+	if err != nil {
+		return "", err
+	}
+	var loginCh, ID = make(chan string), ""
+	go func() {
+		ID = loginVerify(loginCh, conn)
+	}()
+	select {
+	case device = <-loginCh:
+		err = nil
+		if device == "" {
+			key := sha1.Sum([]byte(ID))
+			device = string(key[:])
+			var ret, _ = json.Marshal(map[string]string{"key": device})
+			ret = []byte(Pack.PackString(string(ret)))
+			_ = conn.SetWriteDeadline(time.Now().Add(+time.Millisecond * 10))
+			_, err = conn.Write(ret)
+		} else {
+			key := sha1.Sum([]byte(ID))
+			if device == string(key[:]) {
+			} else {
+				err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginFail)))
+				if err != nil {
+					return "", err
+				}
+				device = string(key[:])
+				var ret, _ = json.Marshal(map[string]string{"key": device})
+				err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(string(ret))))
+				if err != nil {
+					return "", err
+				}
+			}
+		}
+	case <-time.After(time.Second * 10):
+		device = ""
+		err = nil
+	}
+	err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginDone)))
+	if err != nil {
+		return "", io.EOF
+	}
+	return device, err
+}
+
+func loginVerify(ch chan string, conn net.Conn) (id string) {
+	_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 10))
+	scanner := bufio.NewReader(conn)
+	bytes, err := scanner.ReadString(Pack.PackTailByte)
+	for err != nil && err != io.EOF {
+		if len(bytes) > 0 {
+			str, err := Pack.DePackString(bytes)
+			if err != nil {
+				Log.Println(err)
+			} else {
+				if Pack.IsStreamValid([]string{"id"}, str) {
+					dataMap := Pack.Convert2Map(str)
+					id = (*dataMap)["id"]
+					if key, ok := (*dataMap)["key"]; ok {
+						ch <- key
+					} else {
+						ch <- ""
+					}
+				}
+			}
+		}
+	}
+	return id
+}
+
+func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
+	var ch = make(chan string)
+	go func() {
+		_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 10))
+		_, err = conn.Write(data)
+
+		for err != nil {
+			_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 10))
+			_, err = conn.Write(data)
+		}
+		ch <- ""
+	}()
+	select {
+	case <-ch:
+		return nil
+	case <-time.After(t):
+		return io.EOF
 	}
 }
