@@ -21,7 +21,7 @@ func (e *PacketError) Error() string {
 }
 
 func PackString(src string) (dst string) {
-	dst = "PackHeader//Length:" + strconv.FormatInt(int64(len(src)), 10) + "//" + src + "//PackTail//" + string(PackTailByte)
+	dst = "//PackHeader//Length:" + strconv.FormatInt(int64(len(src)), 10) + "//" + src + "//PackTail//" + string(PackTailByte)
 	return dst
 }
 
