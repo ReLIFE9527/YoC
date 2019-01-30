@@ -15,10 +15,7 @@ var writeMutex = make(map[string]*sync.Mutex)
 
 func handleConnection(conn net.Conn) (err error) {
 	var addr, beatBreak, beatFresh = conn.RemoteAddr().String(), false, make(chan string)
-	IMDeviceLogin(addr)
-	writeOp[addr] = make([]string, 0)
-	writeMutex[addr] = new(sync.Mutex)
-	Log.Println(addr, " : connected")
+	login(addr)
 	go connectionHeartBeats(&beatBreak, beatFresh)
 	//TODO
 	for {
@@ -56,9 +53,7 @@ func handleConnection(conn net.Conn) (err error) {
 		}
 	}
 	defer func() {
-		IMDeviceLogout(addr)
-		writeMutex[addr] = nil
-		writeOp[addr] = nil
+		logout(addr)
 		err = conn.Close()
 		if err != nil {
 			Log.Println(err)
@@ -90,4 +85,29 @@ func dispatchOp(str string, conn net.Conn) (err error) {
 func dispatchRead(str string, conn net.Conn) (err error) {
 	fmt.Println(str)
 	return err
+}
+
+func login(device string) {
+	writeOp[device] = make([]string, 0)
+	writeMutex[device] = new(sync.Mutex)
+	IMDeviceLogin(device)
+	baseOperationRegister(device)
+	Log.Println(device, " : connected")
+}
+
+func logout(device string) {
+	IMDeviceLogout(device)
+	writeMutex[device] = nil
+	writeOp[device] = nil
+}
+
+func baseOperationRegister(device string) {
+	err := IMDeviceRegister(device, "OpList", writeOp[device])
+	if err != nil {
+		Log.Println(err)
+	}
+	err = IMDeviceRegister(device, "WriteMutex", writeMutex[device])
+	if err != nil {
+		Log.Println(err)
+	}
 }
