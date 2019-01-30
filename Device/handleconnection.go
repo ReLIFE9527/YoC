@@ -91,7 +91,7 @@ func login(device string) {
 	writeOp[device] = make([]string, 0)
 	writeMutex[device] = new(sync.Mutex)
 	IMDeviceLogin(device)
-	baseOperationRegister(device)
+	basicOperationRegister(device)
 	Log.Println(device, " : connected")
 }
 
@@ -101,7 +101,7 @@ func logout(device string) {
 	writeOp[device] = nil
 }
 
-func baseOperationRegister(device string) {
+func basicOperationRegister(device string) {
 	err := IMDeviceRegister(device, "OpList", writeOp[device])
 	if err != nil {
 		Log.Println(err)
