@@ -20,8 +20,8 @@ func IsJsonEmpty(err error) bool {
 	return false
 }
 
-func checkJsonDir()error{
-	var dir,_ = envpath.GetParentDir(jsonPath)
+func checkJsonDir()error {
+	var dir, _= envpath.GetParentDir(jsonPath)
 	return envpath.CheckMakeDir(dir)
 }
 
@@ -39,7 +39,7 @@ func JsonRead(device *map[string]*deviceStat) error {
 			return err
 		}
 	}
-	var scanner = bufio.NewReader(file)
+	var scanner= bufio.NewReader(file)
 	bytes, err := scanner.ReadBytes('\n')
 	for err != io.EOF {
 		if err != nil {
@@ -73,7 +73,7 @@ func JsonWrite(device *map[string]*deviceStat) error {
 		return err
 	}
 	for _, ds := range *device {
-		if ds==nil{
+		if ds == nil {
 			continue
 		}
 		dc, err := json.Marshal(ds.Data)

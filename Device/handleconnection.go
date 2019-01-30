@@ -14,7 +14,7 @@ var writeOp = make(map[string][]string)
 var writeMutex = make(map[string]*sync.Mutex)
 
 func handleConnection(conn net.Conn) (err error) {
-	var addr, beatBreak, beatFresh= conn.RemoteAddr().String(), false, make(chan string)
+	var addr, beatBreak, beatFresh = conn.RemoteAddr().String(), false, make(chan string)
 	IMDeviceLogin(addr)
 	writeOp[addr] = make([]string, 0)
 	writeMutex[addr] = new(sync.Mutex)
@@ -30,7 +30,7 @@ func handleConnection(conn net.Conn) (err error) {
 			err = dispatchOp(op, conn)
 			beatFresh <- ""
 		} else {
-			var buffer= make([]byte, 128)
+			var buffer = make([]byte, 128)
 			err = conn.SetReadDeadline(time.Now().Add(time.Microsecond * 50))
 			if err != nil {
 				Log.Println(err)
@@ -69,7 +69,7 @@ func handleConnection(conn net.Conn) (err error) {
 	return err
 }
 
-func connectionHeartBeats(flag *bool,ch chan string){
+func connectionHeartBeats(flag *bool, ch chan string) {
 	for {
 		select {
 		case <-ch:
@@ -80,11 +80,11 @@ func connectionHeartBeats(flag *bool,ch chan string){
 	}
 }
 
-func dispatchOp(str string,conn net.Conn)  (err error) {
+func dispatchOp(str string, conn net.Conn) (err error) {
 	return err
 }
 
-func dispatchRead(str string,conn net.Conn)(err error) {
+func dispatchRead(str string, conn net.Conn) (err error) {
 	fmt.Println(str)
 	return err
 }

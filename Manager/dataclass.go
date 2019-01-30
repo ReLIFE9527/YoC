@@ -12,10 +12,10 @@ type dataClass struct {
 	this      *map[string]interface{}
 }
 
-func (obj *dataClass)GetMap() map[string]interface{} {
+func (obj *dataClass) GetMap() map[string]interface{} {
 	if obj.this == nil {
-		var key= reflect.TypeOf(obj)
-		var value= reflect.ValueOf(obj)
+		var key = reflect.TypeOf(obj)
+		var value = reflect.ValueOf(obj)
 		obj.this = new(map[string]interface{})
 		for i := 0; i < key.NumField(); i++ {
 			if key.Field(i).Name != "this" {
@@ -26,11 +26,11 @@ func (obj *dataClass)GetMap() map[string]interface{} {
 	return *obj.this
 }
 
-func (obj *dataClass)Set(key string,value interface{}) error {
+func (obj *dataClass) Set(key string, value interface{}) error {
 	if key == "this" {
 		return errors.New("dataClass write access error")
 	}
-	var field= reflect.ValueOf(obj).Elem().FieldByName(key)
+	var field = reflect.ValueOf(obj).Elem().FieldByName(key)
 	if !field.IsValid() {
 		return errors.New("can't find target element")
 	}
@@ -43,11 +43,11 @@ func (obj *dataClass)Set(key string,value interface{}) error {
 	return nil
 }
 
-func (obj dataClass)Get(key string) (interface{},error) {
+func (obj dataClass) Get(key string) (interface{}, error) {
 	if key == "this" {
 		return nil, errors.New("can't find target element")
 	}
-	var value= reflect.ValueOf(obj).FieldByName(key)
+	var value = reflect.ValueOf(obj).FieldByName(key)
 	if value.IsValid() {
 		return value, nil
 	} else {
@@ -55,10 +55,10 @@ func (obj dataClass)Get(key string) (interface{},error) {
 	}
 }
 
-func (obj *dataClass)SetDeviceID(device string) {
+func (obj *dataClass) SetDeviceID(device string) {
 	obj.DeviceID = device
 }
 
-func (obj dataClass)GetDeviceID() string {
+func (obj dataClass) GetDeviceID() string {
 	return obj.DeviceID
 }
