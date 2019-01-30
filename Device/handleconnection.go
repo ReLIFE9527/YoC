@@ -73,6 +73,9 @@ func connectionHeartBeats(flag *bool, ch chan string) {
 	for {
 		select {
 		case <-ch:
+			if *flag {
+				return
+			}
 		case <-time.After(time.Minute):
 			*flag = true
 			break
