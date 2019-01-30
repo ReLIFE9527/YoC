@@ -164,6 +164,8 @@ func IMDeviceRegister(device string, op string, fun interface{}) error {
 	err := devicesMap[device].Register(op, fun)
 	if err != nil {
 		return &IMError{device, "device register", err}
+	} else {
+		return nil
 	}
 }
 
@@ -179,6 +181,8 @@ func IMClientRegister(client string, op string, fun interface{}) error {
 	err := clientsMap[client].Register(op, fun)
 	if err != nil {
 		return &IMError{client, "device register", err}
+	} else {
+		return nil
 	}
 }
 
