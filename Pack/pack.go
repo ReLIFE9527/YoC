@@ -14,19 +14,19 @@ type PacketError struct {
 	Err error
 }
 
-const PackTailByte = '\n'
+const TailByte = '\n'
 
 func (e *PacketError) Error() string {
 	return e.Obj + " {" + e.Op + ": " + e.Err.Error() + "}"
 }
 
 func PackString(src string) (dst string) {
-	dst = "//PackHeader//Length:" + strconv.FormatInt(int64(len(src)), 10) + "//" + src + "//PackTail//" + string(PackTailByte)
+	dst = "//PackHeader//Length:" + strconv.FormatInt(int64(len(src)), 10) + "//" + src + "//PackTail//" + string(TailByte)
 	return dst
 }
 
 func DePackString(src string) (dst string, err error) {
-	if int(src[len(src)-1]) == PackTailByte {
+	if int(src[len(src)-1]) == TailByte {
 		src = src[:len(src)-1]
 	}
 	strArr := strings.SplitAfter(src, "//")
@@ -58,6 +58,7 @@ func DePackString(src string) (dst string, err error) {
 }
 
 func getLength(str string) (len int64, err error) {
+	str = strings.Replace(str, "//", "", -1)
 	strArr := strings.Split(str, ":")
 	if strArr[0] == "Length" {
 		length, err := strconv.ParseInt(strArr[1], 10, 64)
@@ -73,7 +74,8 @@ func getLength(str string) (len int64, err error) {
 
 func IsStreamValid(properties []string, stream string) bool {
 	for i := 0; i < len(properties); i++ {
-		if !strings.Contains(stream, "\""+properties[i]+"\"") {
+		var prop = "\"" + properties[i] + "\""
+		if !strings.Contains(stream, prop) {
 			return false
 		}
 	}
