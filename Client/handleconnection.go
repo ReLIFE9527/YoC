@@ -16,9 +16,9 @@ import (
 type connection struct {
 	actionRefresh chan string
 	addr          string
+	conn          net.Conn
 	heartBreak    bool
 	scanner       *bufio.Reader
-	conn          net.Conn
 }
 
 func (cn *connection) handleConnection(conn net.Conn) (err error) {
