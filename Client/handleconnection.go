@@ -98,7 +98,8 @@ func (cn *connection) clientVerify(conn net.Conn, ch chan string) {
 							if key, ok := dataMap["key"]; ok && key != "" {
 								ch <- key
 							} else {
-								ch <- string(sha1.Sum([]byte(time.Now().String()))[:])
+								tempt := sha1.Sum([]byte(time.Now().String()))
+								ch <- string(tempt[:])
 							}
 						} else {
 							ch <- ""
