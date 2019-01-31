@@ -61,8 +61,8 @@ func (cn *connection) clientAccessCheck() (err error) {
 	if err != nil {
 		return err
 	}
-	var access, newAccess = make(chan string, 1), false
-	go cn.clientVerify(access, &newAccess)
+	var access = make(chan string, 1)
+	go cn.clientVerify(access)
 	defer func() {
 		access <- ""
 		time.Sleep(time.Second)
@@ -71,13 +71,6 @@ func (cn *connection) clientAccessCheck() (err error) {
 	select {
 	case cn.addr = <-access:
 		if cn.addr != "" {
-			if newAccess {
-				key, _ := json.Marshal(map[string]string{"key": cn.addr})
-				err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(string(key))))
-				if err != nil {
-					return io.EOF
-				}
-			}
 			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginAccess)))
 			return err
 		} else {
@@ -89,7 +82,7 @@ func (cn *connection) clientAccessCheck() (err error) {
 	}
 }
 
-func (cn *connection) clientVerify(ch chan string, re *bool) {
+func (cn *connection) clientVerify(ch chan string) {
 	_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 	bytes, _ := cn.scanner.ReadString(Pack.TailByte)
 	for len(ch) == 0 {
@@ -105,13 +98,8 @@ func (cn *connection) clientVerify(ch chan string, re *bool) {
 						Log.Println(err)
 					} else {
 						if dataMap["password"] == clientPassword {
-							if key, ok := dataMap["key"]; ok && key != "" {
-								ch <- key
-							} else {
-								key := sha1.Sum([]byte(time.Now().String()))
-								*re = true
-								ch <- fmt.Sprintf("%x", key)
-							}
+							key := sha1.Sum([]byte(time.Now().String()))
+							ch <- fmt.Sprintf("%x", key)
 						} else {
 							ch <- ""
 						}
