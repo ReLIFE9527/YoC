@@ -2,8 +2,8 @@ package main
 
 import (
 	"./Client"
-	"./Common"
 	"./Device"
+	"./EnvPath"
 	"./Log"
 	"./Manager"
 	"bufio"

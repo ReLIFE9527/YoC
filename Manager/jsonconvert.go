@@ -1,7 +1,7 @@
 package Data
 
 import (
-	"../Common"
+	"../EnvPath"
 	. "../Log"
 	"bufio"
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-var jsonPath = envpath.GetAppDir()+"/json/YoC.json"
+var jsonPath = envpath.GetAppDir() + "/json/YoC.json"
 var jsonErrEmpty = errors.New("json is empty")
 
 func IsJsonEmpty(err error) bool {
@@ -20,8 +20,8 @@ func IsJsonEmpty(err error) bool {
 	return false
 }
 
-func checkJsonDir()error {
-	var dir, _= envpath.GetParentDir(jsonPath)
+func checkJsonDir() error {
+	var dir, _ = envpath.GetParentDir(jsonPath)
 	return envpath.CheckMakeDir(dir)
 }
 
@@ -39,7 +39,7 @@ func JsonRead(device *map[string]*deviceStat) error {
 			return err
 		}
 	}
-	var scanner= bufio.NewReader(file)
+	var scanner = bufio.NewReader(file)
 	bytes, err := scanner.ReadBytes('\n')
 	for err != io.EOF {
 		if err != nil {
