@@ -69,6 +69,7 @@ var clientsMap map[string]*clientOp
 
 func IMInit() error {
 	devicesMap = make(map[string]*deviceOp)
+	clientsMap = make(map[string]*clientOp)
 	imChanInit()
 	err := initDevicesData()
 	return err
