@@ -1,34 +1,38 @@
 package main
 
 import (
+	"./Client"
 	"./Common"
 	"./Device"
 	"./Log"
 	"./Manager"
+	"bufio"
 	"encoding/json"
+	"io"
 	"os"
 	"runtime"
 	"time"
 )
 
-var global  = map[string]string{
-	"Version": "0.0.5",
+var global = map[string]string{
+	"Version": "0.0.6",
 }
+
+var moduleChannelProperty = map[string]int{
+	"IM":     1,
+	"Device": 1,
+	"Client": 1,
+}
+var moduleChannel map[string]chan error
 
 func initAll() error {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	go initChannel()
 	var err = YoCLog.LogInit()
 	if err != nil {
 		return err
 	}
-	filePath := envpath.GetAppDir()
-	filePath += "/YoC.info"
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	globalInfo, err := json.Marshal(global)
-	_, err = file.Write(globalInfo)
+	err = readGlobal()
 	if err != nil {
 		return err
 	}
@@ -37,6 +41,10 @@ func initAll() error {
 		return err
 	}
 	err = Device.LinkInit()
+	if err != nil {
+		return err
+	}
+	err = Client.LinkInit(global["Password"])
 	return err
 }
 
@@ -45,16 +53,19 @@ func start() error {
 	var err error
 	var startTime = time.Now()
 	lastTick := startTime.Minute()
-	var IMChan, DeviceChan = make(chan error, 1), make(chan error, 1)
-	go Data.IMStart(IMChan)
-	go Device.LinkHandle(DeviceChan)
+	go Data.IMStart(moduleChannel["IM"])
+	go Device.LinkHandle(moduleChannel["Device"])
+	go Client.LinkHandle(moduleChannel["Client"])
 	for true {
 		select {
-		case re := <-IMChan:
+		case re := <-moduleChannel["IM"]:
 			return re
-		case re := <-DeviceChan:
+		case re := <-moduleChannel["Device"]:
+			return re
+		case re := <-moduleChannel["Client"]:
 			return re
 		default:
+			<-time.After(time.Second)
 			t := time.Now()
 			if t.Second() == startTime.Second() && lastTick-t.Minute()%10 == 0 {
 				YoCLog.Log.Println("minute tick ", t)
@@ -80,4 +91,49 @@ func main() {
 	}
 	ret = start()
 	defer exit(ret)
+}
+
+func readGlobal() (err error) {
+	var data = make(map[string]string)
+	filePath := envpath.GetAppDir()
+	filePath += "/YoC.info"
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDONLY, os.ModePerm)
+	scanner := bufio.NewReader(file)
+	bytes, err := scanner.ReadBytes('\n')
+	if err != nil && err != io.EOF {
+		return err
+	}
+	err = json.Unmarshal(bytes, data)
+	if err != nil {
+		return err
+	}
+	if ps, ok := data["Password"]; !ok || ps == "" {
+		data["Password"] = "YoCProject"
+	}
+	if data["Version"] == global["Version"] {
+		global = data
+	} else {
+		data["Version"] = global["Version"]
+		global = data
+		file, err = os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			return err
+		}
+		globalInfo, err := json.Marshal(global)
+		if err != nil {
+			return err
+		}
+		_, err = file.Write(globalInfo)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func initChannel() {
+	moduleChannel = make(map[string]chan error)
+	for name, buf := range moduleChannelProperty {
+		moduleChannel[name] = make(chan error, buf)
+	}
 }

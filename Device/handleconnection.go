@@ -129,7 +129,7 @@ func loginProgress(conn net.Conn) (device string, err error) {
 	if err != nil {
 		return "", err
 	}
-	var loginCh, ID = make(chan string), ""
+	var loginCh, ID = make(chan string, 1), ""
 	go func() {
 		ID = loginVerify(loginCh, conn)
 	}()
@@ -160,6 +160,7 @@ func loginProgress(conn net.Conn) (device string, err error) {
 			}
 		}
 	case <-time.After(time.Second * 10):
+		loginCh <- ""
 		device = ""
 		err = nil
 	}
@@ -174,7 +175,7 @@ func loginVerify(ch chan string, conn net.Conn) (id string) {
 	_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 10))
 	scanner := bufio.NewReader(conn)
 	bytes, err := scanner.ReadString(Pack.PackTailByte)
-	for err != nil && err != io.EOF {
+	for err != nil && err != io.EOF && len(ch) == 0 {
 		if len(bytes) > 0 {
 			str, err := Pack.DePackString(bytes)
 			if err != nil {

@@ -4,15 +4,16 @@ import . "../Log"
 import "net"
 
 var listener net.Listener
+var clientPassword string
 
-func LinkInit() (err error) {
-	listener, err = net.Listen("tcp", "localhost:32376")
+func LinkInit(password string) (err error) {
+	clientPassword = password
+	listener, err = net.Listen("tcp", "localhost:32375")
 	if err != nil {
 		Log.Println(err)
 	} else {
 		Log.Println("Waiting for devices connection...")
 	}
-
 	return err
 }
 
@@ -24,7 +25,8 @@ func LinkHandle(ch chan error) {
 			ch <- err
 		} else {
 			go func(conn net.Conn) {
-				var err= handleConnection(conn)
+				var cn connection
+				var err = cn.handleConnection(conn)
 				if err != nil {
 					Log.Println(err)
 				}
