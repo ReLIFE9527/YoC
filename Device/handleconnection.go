@@ -138,20 +138,20 @@ func loginProgress(conn net.Conn) (device string, err error) {
 		err = nil
 		if device == "" {
 			key := sha1.Sum([]byte(ID))
-			device = string(key[:])
+			device = fmt.Sprintf("%x", key)
 			var ret, _ = json.Marshal(map[string]string{"key": device})
 			ret = []byte(Pack.PackString(string(ret)))
 			_ = conn.SetWriteDeadline(time.Now().Add(+time.Millisecond * 10))
 			_, err = conn.Write(ret)
 		} else {
 			key := sha1.Sum([]byte(ID))
-			if device == string(key[:]) {
+			if device == fmt.Sprintf("%x", key) {
 			} else {
 				err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginFail)))
 				if err != nil {
 					return "", err
 				}
-				device = string(key[:])
+				device = fmt.Sprintf("%x", key)
 				var ret, _ = json.Marshal(map[string]string{"key": device})
 				err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(string(ret))))
 				if err != nil {
