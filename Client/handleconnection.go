@@ -24,6 +24,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
+	cn.scanner = bufio.NewReader(conn)
 	err = cn.clientLogin(conn)
 	if err != nil {
 		return err
@@ -34,6 +35,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	go connectionHeartBeats(&cn.heartBreak, cn.actionFresh)
 	_ = conn.SetReadDeadline(time.Time{})
 	var stream string
+	fmt.Println("ready")
 	//TODO
 	for !cn.heartBreak {
 		_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
@@ -90,7 +92,6 @@ func (cn *connection) clientAccessCheck(conn net.Conn) (err error) {
 
 func (cn *connection) clientVerify(conn net.Conn, ch chan string, re *bool) {
 	_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-	cn.scanner = bufio.NewReader(conn)
 	bytes, _ := cn.scanner.ReadString(Pack.TailByte)
 	for len(ch) == 0 {
 		if len(bytes) > 0 {
