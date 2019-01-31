@@ -26,7 +26,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 		_ = conn.Close()
 	}()
 	cn.scanner, cn.conn = bufio.NewReader(conn), conn
-	err = cn.clientLogin(conn)
+	err = cn.clientLogin()
 	if err != nil {
 		return err
 	}
@@ -34,9 +34,8 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	cn.actionFresh = make(chan string, 1)
 	cn.heartBreak = false
 	go connectionHeartBeats(&cn.heartBreak, cn.actionFresh)
-	_ = conn.SetReadDeadline(time.Time{})
 	var stream string
-	_ = conn.SetReadDeadline(time.Time{})
+	_ = cn.conn.SetReadDeadline(time.Time{})
 	//TODO
 	for !cn.heartBreak {
 		stream, err = cn.scanner.ReadString(Pack.TailByte)
@@ -56,14 +55,14 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	return err
 }
 
-func (cn *connection) clientAccessCheck(conn net.Conn) (err error) {
+func (cn *connection) clientAccessCheck() (err error) {
 	const loginPassword, loginAccess, loginFail = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
-	err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginPassword)))
+	err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginPassword)))
 	if err != nil {
 		return err
 	}
 	var access, newAccess = make(chan string, 1), false
-	go cn.clientVerify(conn, access, &newAccess)
+	go cn.clientVerify(access, &newAccess)
 	defer func() {
 		access <- ""
 		time.Sleep(time.Second)
@@ -74,15 +73,15 @@ func (cn *connection) clientAccessCheck(conn net.Conn) (err error) {
 		if cn.addr != "" {
 			if newAccess {
 				key, _ := json.Marshal(map[string]string{"key": cn.addr})
-				err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(string(key))))
+				err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(string(key))))
 				if err != nil {
 					return io.EOF
 				}
 			}
-			err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginAccess)))
+			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginAccess)))
 			return err
 		} else {
-			err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginFail)))
+			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginFail)))
 			return io.EOF
 		}
 	case <-time.After(time.Second * 10):
@@ -90,8 +89,8 @@ func (cn *connection) clientAccessCheck(conn net.Conn) (err error) {
 	}
 }
 
-func (cn *connection) clientVerify(conn net.Conn, ch chan string, re *bool) {
-	_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
+func (cn *connection) clientVerify(ch chan string, re *bool) {
+	_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 	bytes, _ := cn.scanner.ReadString(Pack.TailByte)
 	for len(ch) == 0 {
 		if len(bytes) > 0 {
@@ -120,13 +119,13 @@ func (cn *connection) clientVerify(conn net.Conn, ch chan string, re *bool) {
 				}
 			}
 		}
-		_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
+		_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 		bytes, _ = cn.scanner.ReadString(Pack.TailByte)
 	}
 }
 
-func (cn *connection) clientLogin(conn net.Conn) (err error) {
-	err = cn.clientAccessCheck(conn)
+func (cn *connection) clientLogin() (err error) {
+	err = cn.clientAccessCheck()
 	if err != nil {
 		return err
 	}
