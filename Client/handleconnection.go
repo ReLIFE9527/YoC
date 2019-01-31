@@ -35,30 +35,22 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	cn.heartBreak = false
 	go connectionHeartBeats(&cn.heartBreak, cn.actionFresh)
 	_ = conn.SetReadDeadline(time.Time{})
-	//var stream string
-	fmt.Println("ready")
+	var stream string
 	_ = conn.SetReadDeadline(time.Time{})
 	//TODO
 	for !cn.heartBreak {
-		/*
-			stream, err = cn.scanner.ReadString(Pack.TailByte)
-			for err == io.EOF && stream[len(stream)-1] != Pack.TailByte {
-				var str string
-				str, err = cn.scanner.ReadString(Pack.TailByte)
-				stream += str
+		stream, err = cn.scanner.ReadString(Pack.TailByte)
+		for err == io.EOF && stream[len(stream)-1] != Pack.TailByte {
+			var str string
+			str, err = cn.scanner.ReadString(Pack.TailByte)
+			stream += str
+		}
+		if len(stream) > 0 {
+			cn.actionFresh <- ""
+			stream, err = Pack.DePackString(stream)
+			if Pack.IsStreamValid([]string{"operation"}, stream) {
+				cn.dispatch(stream)
 			}
-			if len(stream) > 0 {
-				cn.actionFresh <- ""
-				stream, err = Pack.DePackString(stream)
-				if Pack.IsStreamValid([]string{"operation"}, stream) {
-					cn.dispatch(stream)
-				}
-			}*/
-
-		var bytes = make([]byte, 4096)
-		n, err := conn.Read(bytes)
-		if (err == nil || err == io.EOF) && n > 0 {
-			fmt.Println(bytes[:n])
 		}
 	}
 	return err
@@ -131,7 +123,6 @@ func (cn *connection) clientVerify(conn net.Conn, ch chan string, re *bool) {
 		_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 		bytes, _ = cn.scanner.ReadString(Pack.TailByte)
 	}
-	fmt.Println("done")
 }
 
 func (cn *connection) clientLogin(conn net.Conn) (err error) {
