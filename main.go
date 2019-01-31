@@ -1,6 +1,7 @@
 package main
 
 import (
+	"./Client"
 	"./Common"
 	"./Device"
 	"./Log"
@@ -17,8 +18,16 @@ var global = map[string]string{
 	"Version": "0.0.6",
 }
 
+var moduleChannelProperty = map[string]int{
+	"IM":     1,
+	"Device": 1,
+	"Client": 1,
+}
+var moduleChannel map[string]chan error
+
 func initAll() error {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	go initChannel()
 	var err = YoCLog.LogInit()
 	if err != nil {
 		return err
@@ -32,6 +41,10 @@ func initAll() error {
 		return err
 	}
 	err = Device.LinkInit()
+	if err != nil {
+		return err
+	}
+	err = Client.LinkInit(global["Password"])
 	return err
 }
 
@@ -40,16 +53,19 @@ func start() error {
 	var err error
 	var startTime = time.Now()
 	lastTick := startTime.Minute()
-	var IMChan, DeviceChan = make(chan error, 1), make(chan error, 1)
-	go Data.IMStart(IMChan)
-	go Device.LinkHandle(DeviceChan)
+	go Data.IMStart(moduleChannel["IM"])
+	go Device.LinkHandle(moduleChannel["Device"])
+	go Client.LinkHandle(moduleChannel["Client"])
 	for true {
 		select {
-		case re := <-IMChan:
+		case re := <-moduleChannel["IM"]:
 			return re
-		case re := <-DeviceChan:
+		case re := <-moduleChannel["Device"]:
+			return re
+		case re := <-moduleChannel["Client"]:
 			return re
 		default:
+			<-time.After(time.Second)
 			t := time.Now()
 			if t.Second() == startTime.Second() && lastTick-t.Minute()%10 == 0 {
 				YoCLog.Log.Println("minute tick ", t)
@@ -113,4 +129,11 @@ func readGlobal() (err error) {
 		}
 	}
 	return err
+}
+
+func initChannel() {
+	moduleChannel = make(map[string]chan error)
+	for name, buf := range moduleChannelProperty {
+		moduleChannel[name] = make(chan error, buf)
+	}
 }
