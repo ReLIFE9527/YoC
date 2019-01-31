@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"crypto/sha1"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"time"
@@ -21,8 +22,27 @@ func handleConnection(conn net.Conn) (err error) {
 	if err != nil {
 		return err
 	}
+	defer clientLogout(addr)
+	var actionFresh = make(chan string, 1)
+	var heartBreak = false
+	go connectionHeartBeats(&heartBreak, actionFresh)
 	//TODO
-
+	for {
+		if heartBreak {
+			break
+		}
+		scanner := bufio.NewReader(conn)
+		str, err := scanner.ReadString(Pack.PackTailByte)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if len(str) > 0 {
+			str, err = Pack.DePackString(str)
+			if Pack.IsStreamValid([]string{"operation"}, str) {
+				dispatch(str, actionFresh)
+			}
+		}
+	}
 	return err
 }
 
@@ -96,6 +116,8 @@ func clientLogin(conn net.Conn, addr *string) (err error) {
 	return err
 }
 
+func clientLogout(addr string) { Data.IMDeviceLogout(addr) }
+
 func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
 	var ch = make(chan string)
 	go func() {
@@ -114,4 +136,22 @@ func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
 	case <-time.After(t):
 		return io.EOF
 	}
+}
+
+func connectionHeartBeats(flag *bool, actionFresh chan string) {
+	for {
+		select {
+		case <-actionFresh:
+			if *flag {
+				return
+			}
+		case <-time.After(time.Minute):
+			*flag = true
+			break
+		}
+	}
+}
+
+func dispatch(operation string, fresh chan string) {
+	fmt.Println(operation)
 }
