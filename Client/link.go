@@ -8,7 +8,7 @@ var clientPassword string
 
 func LinkInit(password string) (err error) {
 	clientPassword = password
-	listener, err = net.Listen("tcp", "localhost:32376")
+	listener, err = net.Listen("tcp", "localhost:32375")
 	if err != nil {
 		Log.Println(err)
 	} else {
