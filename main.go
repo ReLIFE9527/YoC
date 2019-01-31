@@ -88,6 +88,7 @@ func main() {
 	var ret = initAll()
 	if ret != nil {
 		exit(ret)
+		return
 	}
 	ret = start()
 	defer exit(ret)
@@ -103,7 +104,7 @@ func readGlobal() (err error) {
 	if err != nil && err != io.EOF {
 		return err
 	}
-	err = json.Unmarshal(bytes, data)
+	err = json.Unmarshal(bytes, &data)
 	if err != nil {
 		return err
 	}
