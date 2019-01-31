@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+type connection struct {
+	actionRefresh  chan string
+	addr           string
+	conn           net.Conn
+	heartBreak     bool
+	scanner        *bufio.Reader
+	working        sync.Mutex
+	writeOperation string
+}
+
 var writeOp = make(map[string][]string)
 var writeMutex = make(map[string]*sync.Mutex)
 
