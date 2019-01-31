@@ -86,8 +86,41 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	return err
 }
 
+func (cn *connection) deviceVerify(ch chan string, returnKey bool) {
+
+}
+
 func (cn *connection) deviceAccessCheck() (err error) {
-	const loginStart, loginFailed, loginDone = "{\"login\":\"start\"}", "{\"login\":\"failed\"}", "{\"login\":\"done\"}"
+	const loginFailed, loginDone = "{\"login\":\"failed\"}", "{\"login\":\"done\"}"
+	var access, returnKey = make(chan string, 1), false
+	go cn.deviceVerify(access, returnKey)
+	defer func() {
+		access <- ""
+		time.Sleep(time.Second)
+		<-access
+	}()
+	select {
+	case cn.addr = <-access:
+		if cn.addr != "" {
+			if returnKey {
+				ret, err := json.Marshal(map[string]string{"key": cn.addr})
+				if err != nil {
+					return err
+				}
+				err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(string(ret[:]))))
+				if err != nil {
+					return io.EOF
+				}
+			}
+			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginDone)))
+			return err
+		} else {
+			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginFailed)))
+			return io.EOF
+		}
+	case <-time.After(time.Second * 10):
+		return io.EOF
+	}
 	return err
 }
 
