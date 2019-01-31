@@ -2,6 +2,7 @@ package Device
 
 import (
 	. "../Log"
+	"../Manager"
 	. "../Manager"
 	"../Pack"
 	"bufio"
@@ -17,8 +18,8 @@ import (
 type connection struct {
 	actionRefresh  chan string
 	addr           string
+	beatBreak      bool
 	conn           net.Conn
-	heartBreak     bool
 	scanner        *bufio.Reader
 	working        sync.Mutex
 	writeOperation string
@@ -27,8 +28,8 @@ type connection struct {
 var writeOp = make(map[string][]string)
 var writeMutex = make(map[string]*sync.Mutex)
 
-func (cn connection) handleConnection(conn net.Conn) (err error) {
-	var beatBreak, beatFresh = false, make(chan string)
+func (cn *connection) handleConnection(conn net.Conn) (err error) {
+	cn.scanner, cn.conn = bufio.NewReader(conn), conn
 	addr, err := loginProgress(conn)
 	if err != nil {
 		Log.Println(conn.RemoteAddr().String(), " : ", err)
@@ -37,7 +38,7 @@ func (cn connection) handleConnection(conn net.Conn) (err error) {
 		return nil
 	}
 	login(addr)
-	go connectionHeartBeats(&beatBreak, beatFresh)
+	go connectionHeartBeats(&cn.beatBreak, cn.actionRefresh)
 	//TODO
 	for {
 		if len(writeOp[addr]) > 0 {
@@ -46,7 +47,7 @@ func (cn connection) handleConnection(conn net.Conn) (err error) {
 			writeOp[addr] = writeOp[addr][1:]
 			writeMutex[addr].Unlock()
 			err = dispatchOp(op, conn)
-			beatFresh <- ""
+			cn.actionRefresh <- ""
 		} else {
 			var buffer = make([]byte, 128)
 			err = conn.SetReadDeadline(time.Now().Add(time.Microsecond * 50))
@@ -57,7 +58,7 @@ func (cn connection) handleConnection(conn net.Conn) (err error) {
 			if err == nil && n > 0 {
 				data := string(buffer[:n])
 				err = dispatchRead(data, conn)
-				beatFresh <- ""
+				cn.actionRefresh <- ""
 			} else {
 				if n == -1 {
 					//break
@@ -65,11 +66,11 @@ func (cn connection) handleConnection(conn net.Conn) (err error) {
 				}
 				switch err {
 				case io.EOF:
-					beatBreak = true
+					cn.beatBreak = true
 				}
 			}
 		}
-		if beatBreak {
+		if cn.beatBreak {
 			break
 		}
 	}
@@ -82,6 +83,21 @@ func (cn connection) handleConnection(conn net.Conn) (err error) {
 			Log.Println(addr, " : connection closed")
 		}
 	}()
+	return err
+}
+
+func (cn *connection) deviceAccessCheck() (err error) {
+	const loginStart, loginFailed, loginDone = "{\"login\":\"start\"}", "{\"login\":\"failed\"}", "{\"login\":\"done\"}"
+	return err
+}
+
+func (cn *connection) deviceLogin() (err error) {
+	err = cn.deviceAccessCheck()
+	if err != nil {
+		return err
+	}
+	Data.IMDeviceLogin(cn.addr)
+	Log.Println(cn.addr, " : device connected")
 	return err
 }
 
