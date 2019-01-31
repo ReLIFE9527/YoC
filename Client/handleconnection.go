@@ -18,13 +18,14 @@ type connection struct {
 	actionFresh chan string
 	heartBreak  bool
 	scanner     *bufio.Reader
+	conn        net.Conn
 }
 
 func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	cn.scanner = bufio.NewReader(conn)
+	cn.scanner, cn.conn = bufio.NewReader(conn), conn
 	err = cn.clientLogin(conn)
 	if err != nil {
 		return err
@@ -34,23 +35,30 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	cn.heartBreak = false
 	go connectionHeartBeats(&cn.heartBreak, cn.actionFresh)
 	_ = conn.SetReadDeadline(time.Time{})
-	var stream string
+	//var stream string
 	fmt.Println("ready")
+	_ = conn.SetReadDeadline(time.Time{})
 	//TODO
 	for !cn.heartBreak {
-		_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-		stream, err = cn.scanner.ReadString(Pack.TailByte)
-		for err == io.EOF && stream[len(stream)-1] != Pack.TailByte {
-			var str string
-			str, err = cn.scanner.ReadString(Pack.TailByte)
-			stream += str
-		}
-		if len(stream) > 0 {
-			cn.actionFresh <- ""
-			stream, err = Pack.DePackString(stream)
-			if Pack.IsStreamValid([]string{"operation"}, stream) {
-				cn.dispatch(stream)
+		/*
+			stream, err = cn.scanner.ReadString(Pack.TailByte)
+			for err == io.EOF && stream[len(stream)-1] != Pack.TailByte {
+				var str string
+				str, err = cn.scanner.ReadString(Pack.TailByte)
+				stream += str
 			}
+			if len(stream) > 0 {
+				cn.actionFresh <- ""
+				stream, err = Pack.DePackString(stream)
+				if Pack.IsStreamValid([]string{"operation"}, stream) {
+					cn.dispatch(stream)
+				}
+			}*/
+
+		var bytes = make([]byte, 4096)
+		n, err := conn.Read(bytes)
+		if (err == nil || err == io.EOF) && n > 0 {
+			fmt.Println(bytes[:n])
 		}
 	}
 	return err
@@ -64,6 +72,11 @@ func (cn *connection) clientAccessCheck(conn net.Conn) (err error) {
 	}
 	var access, newAccess = make(chan string, 1), false
 	go cn.clientVerify(conn, access, &newAccess)
+	defer func() {
+		access <- ""
+		time.Sleep(time.Second)
+		<-access
+	}()
 	select {
 	case cn.addr = <-access:
 		if cn.addr != "" {
@@ -81,11 +94,6 @@ func (cn *connection) clientAccessCheck(conn net.Conn) (err error) {
 			return io.EOF
 		}
 	case <-time.After(time.Second * 10):
-		access <- ""
-		go func() {
-			<-time.After(time.Second)
-			<-access
-		}()
 		return io.EOF
 	}
 }
@@ -123,6 +131,7 @@ func (cn *connection) clientVerify(conn net.Conn, ch chan string, re *bool) {
 		_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 		bytes, _ = cn.scanner.ReadString(Pack.TailByte)
 	}
+	fmt.Println("done")
 }
 
 func (cn *connection) clientLogin(conn net.Conn) (err error) {
