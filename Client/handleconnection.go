@@ -13,22 +13,27 @@ import (
 	"time"
 )
 
-func handleConnection(conn net.Conn) (err error) {
-	var addr string
+type connection struct {
+	addr        string
+	actionFresh chan string
+	heartBreak  bool
+}
+
+func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	err = clientLogin(conn, &addr)
+	err = cn.clientLogin(conn)
 	if err != nil {
 		return err
 	}
-	defer clientLogout(addr)
-	var actionFresh = make(chan string, 1)
-	var heartBreak = false
-	go connectionHeartBeats(&heartBreak, actionFresh)
+	defer cn.clientLogout()
+	cn.actionFresh = make(chan string, 1)
+	cn.heartBreak = false
+	go connectionHeartBeats(&cn.heartBreak, cn.actionFresh)
 	//TODO
 	for {
-		if heartBreak {
+		if cn.heartBreak {
 			break
 		}
 		scanner := bufio.NewReader(conn)
@@ -39,29 +44,29 @@ func handleConnection(conn net.Conn) (err error) {
 		if len(str) > 0 {
 			str, err = Pack.DePackString(str)
 			if Pack.IsStreamValid([]string{"operation"}, str) {
-				dispatch(str, actionFresh)
+				cn.dispatch(str)
 			}
 		}
 	}
 	return err
 }
 
-func clientAccessCheck(conn net.Conn) (addr string, err error) {
+func (cn *connection) clientAccessCheck(conn net.Conn) (err error) {
 	const loginPassword, loginAccess, loginFail = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
 	err = writeRepeat(conn, time.Second*2, []byte(loginPassword))
 	if err != nil {
-		return "", err
+		return err
 	}
 	var access = make(chan string, 1)
-	go clientVerify(conn, access)
+	go cn.clientVerify(conn, access)
 	select {
-	case addr = <-access:
-		if addr != "" {
+	case cn.addr = <-access:
+		if cn.addr != "" {
 			err = writeRepeat(conn, time.Second*2, []byte(loginAccess))
-			return addr, err
+			return err
 		} else {
 			err = writeRepeat(conn, time.Second*2, []byte(loginFail))
-			return "", io.EOF
+			return io.EOF
 		}
 	case <-time.After(time.Second * 10):
 		access <- ""
@@ -69,11 +74,11 @@ func clientAccessCheck(conn net.Conn) (addr string, err error) {
 			<-time.After(time.Second)
 			<-access
 		}()
-		return "", io.EOF
+		return io.EOF
 	}
 }
 
-func clientVerify(conn net.Conn, ch chan string) {
+func (cn *connection) clientVerify(conn net.Conn, ch chan string) {
 	_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 10))
 	scanner := bufio.NewReader(conn)
 	bytes, err := scanner.ReadString(Pack.PackTailByte)
@@ -106,17 +111,21 @@ func clientVerify(conn net.Conn, ch chan string) {
 	}
 }
 
-func clientLogin(conn net.Conn, addr *string) (err error) {
-	*addr, err = clientAccessCheck(conn)
+func (cn *connection) clientLogin(conn net.Conn) (err error) {
+	err = cn.clientAccessCheck(conn)
 	if err != nil {
 		return err
 	}
-	Data.IMClientLogin(*addr)
-	Log.Println(*addr, " : client connected")
+	Data.IMClientLogin(cn.addr)
+	Log.Println(cn.addr, " : client connected")
 	return err
 }
 
-func clientLogout(addr string) { Data.IMDeviceLogout(addr) }
+func (cn *connection) clientLogout() { Data.IMDeviceLogout(cn.addr) }
+
+func (cn connection) dispatch(operation string) {
+	fmt.Println(operation)
+}
 
 func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
 	var ch = make(chan string)
@@ -150,8 +159,4 @@ func connectionHeartBeats(flag *bool, actionFresh chan string) {
 			break
 		}
 	}
-}
-
-func dispatch(operation string, fresh chan string) {
-	fmt.Println(operation)
 }

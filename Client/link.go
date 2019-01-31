@@ -25,7 +25,8 @@ func LinkHandle(ch chan error) {
 			ch <- err
 		} else {
 			go func(conn net.Conn) {
-				var err = handleConnection(conn)
+				var cn connection
+				var err = cn.handleConnection(conn)
 				if err != nil {
 					Log.Println(err)
 				}
