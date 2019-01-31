@@ -5,7 +5,9 @@ import (
 	"./Device"
 	"./Log"
 	"./Manager"
+	"bufio"
 	"encoding/json"
+	"io"
 	"os"
 	"runtime"
 	"time"
@@ -21,14 +23,7 @@ func initAll() error {
 	if err != nil {
 		return err
 	}
-	filePath := envpath.GetAppDir()
-	filePath += "/YoC.info"
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	globalInfo, err := json.Marshal(global)
-	_, err = file.Write(globalInfo)
+	err = readGlobal()
 	if err != nil {
 		return err
 	}
@@ -80,4 +75,42 @@ func main() {
 	}
 	ret = start()
 	defer exit(ret)
+}
+
+func readGlobal() (err error) {
+	var data = make(map[string]string)
+	filePath := envpath.GetAppDir()
+	filePath += "/YoC.info"
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDONLY, os.ModePerm)
+	scanner := bufio.NewReader(file)
+	bytes, err := scanner.ReadBytes('\n')
+	if err != nil && err != io.EOF {
+		return err
+	}
+	err = json.Unmarshal(bytes, data)
+	if err != nil {
+		return err
+	}
+	if ps, ok := data["Password"]; !ok || ps == "" {
+		data["Password"] = "YoCProject"
+	}
+	if data["Version"] == global["Version"] {
+		global = data
+	} else {
+		data["Version"] = global["Version"]
+		global = data
+		file, err = os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			return err
+		}
+		globalInfo, err := json.Marshal(global)
+		if err != nil {
+			return err
+		}
+		_, err = file.Write(globalInfo)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
