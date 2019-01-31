@@ -174,7 +174,7 @@ func loginProgress(conn net.Conn) (device string, err error) {
 func loginVerify(ch chan string, conn net.Conn) (id string) {
 	_ = conn.SetReadDeadline(time.Now().Add(time.Millisecond * 10))
 	scanner := bufio.NewReader(conn)
-	bytes, err := scanner.ReadString(Pack.PackTailByte)
+	bytes, err := scanner.ReadString(Pack.TailByte)
 	for err != nil && err != io.EOF && len(ch) == 0 {
 		if len(bytes) > 0 {
 			str, err := Pack.DePackString(bytes)
