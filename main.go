@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-var global  = map[string]string{
-	"Version": "0.0.5",
+var global = map[string]string{
+	"Version": "0.0.6",
 }
 
 func initAll() error {
