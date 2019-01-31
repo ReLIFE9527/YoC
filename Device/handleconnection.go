@@ -27,7 +27,7 @@ type connection struct {
 var writeOp = make(map[string][]string)
 var writeMutex = make(map[string]*sync.Mutex)
 
-func handleConnection(conn net.Conn) (err error) {
+func (cn connection) handleConnection(conn net.Conn) (err error) {
 	var beatBreak, beatFresh = false, make(chan string)
 	addr, err := loginProgress(conn)
 	if err != nil {
