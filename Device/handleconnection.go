@@ -124,7 +124,7 @@ func basicOperationRegister(device string) {
 }
 
 func loginProgress(conn net.Conn) (device string, err error) {
-	var loginDone, loginStart, loginFail = "{\"login\":\"done\"}", "{\"login\":\"start\"}", "{\"login\":\"fail\"}"
+	var loginDone, loginStart, loginFail = "{\"login\":\"done\"}", "{\"login\":\"start\"}", "{\"login\":\"failed\"}"
 	err = writeRepeat(conn, time.Second*2, []byte(Pack.PackString(loginStart)))
 	if err != nil {
 		return "", err
