@@ -75,20 +75,6 @@ func handleConnection(conn net.Conn) (err error) {
 	return err
 }
 
-func connectionHeartBeats(flag *bool, ch chan string) {
-	for {
-		select {
-		case <-ch:
-			if *flag {
-				return
-			}
-		case <-time.After(time.Minute):
-			*flag = true
-			break
-		}
-	}
-}
-
 func dispatchOp(str string, conn net.Conn) (err error) {
 	return err
 }
@@ -197,14 +183,15 @@ func loginVerify(ch chan string, conn net.Conn) (id string) {
 }
 
 func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
-	var ch = make(chan string)
+	var ch = make(chan string, 1)
 	go func() {
-		_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 10))
+		_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
 		_, err = conn.Write(data)
-
-		for err != nil {
-			_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 10))
+		var count int
+		for err != nil && count < 2 {
+			_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
 			_, err = conn.Write(data)
+			count++
 		}
 		ch <- ""
 	}()
@@ -213,5 +200,19 @@ func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
 		return nil
 	case <-time.After(t):
 		return io.EOF
+	}
+}
+
+func connectionHeartBeats(flag *bool, actionFresh chan string) {
+	for {
+		select {
+		case <-actionFresh:
+			if *flag {
+				return
+			}
+		case <-time.After(time.Minute):
+			*flag = true
+			break
+		}
 	}
 }
