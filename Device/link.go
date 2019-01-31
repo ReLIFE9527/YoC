@@ -14,7 +14,6 @@ func LinkInit() (err error) {
 	} else {
 		Log.Println("Waiting for devices connection...")
 	}
-
 	return err
 }
 
@@ -26,7 +25,7 @@ func LinkHandle(ch chan error) {
 			ch <- err
 		} else {
 			go func(conn net.Conn) {
-				var err= handleConnection(conn)
+				var err = handleConnection(conn)
 				if err != nil {
 					Log.Println(err)
 				}
