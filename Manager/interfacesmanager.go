@@ -1,9 +1,6 @@
 package Data
 
 import (
-	"errors"
-	"reflect"
-	"sync"
 	"time"
 )
 
@@ -12,6 +9,7 @@ var selectChanList = map[string]int64{ //List of [function name]channel buffer
 	"remove":    1,
 	"save":      10,
 }
+var chanMap map[string]chan string
 
 type IMError struct {
 	Obj string
@@ -23,53 +21,11 @@ func (e *IMError) Error() string {
 	return e.Obj + " {" + e.Op + ": " + e.Err.Error() + "}"
 }
 
-type deviceOp struct {
-	OpList     []string
-	WriteMutex *sync.Mutex
-}
-
-func (obj *deviceOp) Register(key string, value interface{}) error {
-	if key == "this" {
-		return errors.New("dataClass write access error")
-	}
-	var field = reflect.ValueOf(obj).Elem().FieldByName(key)
-	if !field.IsValid() {
-		return errors.New("can't find target element")
-	}
-	if field.Type() == reflect.ValueOf(value).Type() {
-		field.Set(reflect.ValueOf(value))
-	} else {
-		return errors.New("field value type error")
-	}
-	return nil
-}
-
-var devicesMap map[string]*deviceOp
-
-type clientOp struct {
-}
-
-func (obj *clientOp) Register(key string, value interface{}) error {
-	if key == "this" {
-		return errors.New("dataClass write access error")
-	}
-	var field = reflect.ValueOf(obj).Elem().FieldByName(key)
-	if !field.IsValid() {
-		return errors.New("can't find target element")
-	}
-	if field.Type() == reflect.ValueOf(value).Type() {
-		field.Set(reflect.ValueOf(value))
-	} else {
-		return errors.New("field value type error")
-	}
-	return nil
-}
-
-var clientsMap map[string]*clientOp
+var devicesMap, clientsMap map[string]map[string]interface{}
 
 func IMInit() error {
-	devicesMap = make(map[string]*deviceOp)
-	clientsMap = make(map[string]*clientOp)
+	devicesMap = make(map[string]map[string]interface{})
+	clientsMap = make(map[string]map[string]interface{})
 	imChanInit()
 	err := initDevicesData()
 	return err
@@ -150,7 +106,7 @@ func imDeviceRemoveCheck() {
 }
 
 func IMDeviceLogin(device string) {
-	devicesMap[device] = new(deviceOp)
+	devicesMap[device] = make(map[string]interface{})
 	devicesOnline(device)
 	chanMap["save"] <- ""
 }
@@ -161,33 +117,21 @@ func IMDeviceLogout(device string) {
 	chanMap["save"] <- ""
 }
 
-func IMDeviceRegister(device string, op string, fun interface{}) error {
-	err := devicesMap[device].Register(op, fun)
-	if err != nil {
-		return &IMError{device, "device register", err}
-	} else {
-		return nil
-	}
+func IMDeviceRegister(addr string, operation string, function interface{}) {
+	devicesMap[addr][operation] = function
 }
 
 func IMClientLogin(client string) {
-	clientsMap[client] = new(clientOp)
+	clientsMap[client] = make(map[string]interface{})
 }
 
 func IMClientLogout(client string) {
 	delete(clientsMap, client)
 }
 
-func IMClientRegister(client string, op string, fun interface{}) error {
-	err := clientsMap[client].Register(op, fun)
-	if err != nil {
-		return &IMError{client, "device register", err}
-	} else {
-		return nil
-	}
+func IMClientRegister(addr string, operation string, function interface{}) {
+	clientsMap[addr][operation] = function
 }
-
-var chanMap map[string]chan string
 
 func imChanInit() {
 	chanMap = make(map[string]chan string)
