@@ -2,8 +2,8 @@ package main
 
 import (
 	"./Client"
-	"./Common"
 	"./Device"
+	"./EnvPath"
 	"./Log"
 	"./Manager"
 	"bufio"
@@ -15,7 +15,7 @@ import (
 )
 
 var global = map[string]string{
-	"Version": "0.0.6",
+	"Version": "0.0.7",
 }
 
 var moduleChannelProperty = map[string]int{

@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-import 	"../Common"
+import "../EnvPath"
 
 var Log *log.Logger
 var logFile *os.File
 
 func LogInit() error {
-	log.SetFlags(log.LstdFlags|log.Lshortfile|log.Ltime)
-	logFile =openLog()
-	Log = log.New(logFile,"",log.LstdFlags|log.Lshortfile|log.Ltime)
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Ltime)
+	logFile = openLog()
+	Log = log.New(logFile, "", log.LstdFlags|log.Lshortfile|log.Ltime)
 	Log.Println("---------------Log Start---------------")
 	return nil
 }
@@ -32,7 +32,7 @@ func LogExit(ec error) {
 }
 
 func openLog() *os.File {
-	var filePath= envpath.GetAppDir() + "/logs/YoC.log"
+	var filePath = envpath.GetAppDir() + "/logs/YoC.log"
 	stat, err := os.Stat(filePath)
 	if err != nil {
 		log.Println(err)

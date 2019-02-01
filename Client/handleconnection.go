@@ -14,11 +14,11 @@ import (
 )
 
 type connection struct {
-	addr        string
-	actionFresh chan string
-	heartBreak  bool
-	scanner     *bufio.Reader
-	conn        net.Conn
+	actionRefresh chan string
+	addr          string
+	conn          net.Conn
+	heartBreak    bool
+	scanner       *bufio.Reader
 }
 
 func (cn *connection) handleConnection(conn net.Conn) (err error) {
@@ -31,21 +31,16 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 		return err
 	}
 	defer cn.clientLogout()
-	cn.actionFresh = make(chan string, 1)
+	cn.actionRefresh = make(chan string, 1)
 	cn.heartBreak = false
-	go connectionHeartBeats(&cn.heartBreak, cn.actionFresh)
+	go connectionHeartBeats(&cn.heartBreak, cn.actionRefresh)
 	var stream string
 	_ = cn.conn.SetReadDeadline(time.Time{})
 	//TODO
 	for !cn.heartBreak {
 		stream, err = cn.scanner.ReadString(Pack.TailByte)
-		for err == io.EOF && stream[len(stream)-1] != Pack.TailByte {
-			var str string
-			str, err = cn.scanner.ReadString(Pack.TailByte)
-			stream += str
-		}
 		if len(stream) > 0 {
-			cn.actionFresh <- ""
+			cn.actionRefresh <- ""
 			stream, err = Pack.DePackString(stream)
 			if Pack.IsStreamValid([]string{"operation"}, stream) {
 				cn.dispatch(stream)
@@ -149,10 +144,10 @@ func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
 	}
 }
 
-func connectionHeartBeats(flag *bool, actionFresh chan string) {
+func connectionHeartBeats(flag *bool, actionRefresh chan string) {
 	for {
 		select {
-		case <-actionFresh:
+		case <-actionRefresh:
 			if *flag {
 				return
 			}
