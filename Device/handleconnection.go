@@ -28,7 +28,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	cn.scanner, cn.conn, cn.working = bufio.NewReader(conn), conn, make(chan string, 1)
+	cn.scanner, cn.conn, cn.working, cn.beatBreak, cn.actionRefresh = bufio.NewReader(conn), conn, make(chan string, 1), false, make(chan string)
 	err = cn.deviceLogin()
 	if err != nil {
 		return err
@@ -46,9 +46,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 			if len(stream) > 0 {
 				cn.actionRefresh <- ""
 				stream, err = Pack.DePackString(stream)
-				if Pack.IsStreamValid([]string{"operation"}, stream) {
-					cn.streamDispatch(stream)
-				}
+				cn.streamDispatch(stream)
 			}
 		}
 	}
@@ -174,10 +172,10 @@ func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
 	}
 }
 
-func connectionHeartBeats(flag *bool, actionFresh chan string) {
+func connectionHeartBeats(flag *bool, actionRefresh chan string) {
 	for {
 		select {
-		case <-actionFresh:
+		case <-actionRefresh:
 			if *flag {
 				return
 			}
