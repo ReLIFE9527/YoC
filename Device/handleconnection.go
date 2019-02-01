@@ -11,28 +11,24 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"sync"
 	"time"
 )
 
 type connection struct {
-	actionRefresh  chan string
-	addr           string
-	beatBreak      bool
-	conn           net.Conn
-	scanner        *bufio.Reader
-	working        sync.Mutex
-	writeOperation string
+	actionRefresh chan string
+	addr          string
+	beatBreak     bool
+	conn          net.Conn
+	operation     string
+	scanner       *bufio.Reader
+	working       chan string
 }
-
-var writeOp = make(map[string][]string)
-var writeMutex = make(map[string]*sync.Mutex)
 
 func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	cn.scanner, cn.conn, err = bufio.NewReader(conn), conn, cn.deviceLogin()
+	cn.scanner, cn.conn, cn.working, err = bufio.NewReader(conn), conn, make(chan string, 1), cn.deviceLogin()
 	if err != nil {
 		return err
 	}
@@ -41,7 +37,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	var stream string
 	//TODO
 	for !cn.beatBreak {
-		if cn.writeOperation != "" {
+		if cn.operation != "" {
 			cn.operationDispatch()
 		} else {
 			_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
@@ -127,6 +123,7 @@ func (cn *connection) deviceLogin() (err error) {
 		return err
 	}
 	Data.IMDeviceLogin(cn.addr)
+	Data.IMDeviceRegister(cn.addr, "add", cn.AddOperation)
 	Log.Println(cn.addr, " : device connected")
 	return err
 }
@@ -136,7 +133,19 @@ func (cn *connection) deviceLogout() {
 }
 
 func (cn *connection) operationDispatch() {
+	fmt.Println(cn.operation)
+	cn.operation = ""
+	<-cn.working
+}
 
+func (cn *connection) AddOperation(operation string) error {
+	if cn.operation == "" && len(cn.working) == 0 {
+		cn.working <- ""
+		cn.operation = operation
+		return nil
+	} else {
+		return io.EOF
+	}
 }
 
 func (cn *connection) streamDispatch(stream string) {
