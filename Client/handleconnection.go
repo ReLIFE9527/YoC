@@ -39,11 +39,6 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	//TODO
 	for !cn.heartBreak {
 		stream, err = cn.scanner.ReadString(Pack.TailByte)
-		for err == io.EOF && stream[len(stream)-1] != Pack.TailByte {
-			var str string
-			str, err = cn.scanner.ReadString(Pack.TailByte)
-			stream += str
-		}
 		if len(stream) > 0 {
 			cn.actionRefresh <- ""
 			stream, err = Pack.DePackString(stream)
