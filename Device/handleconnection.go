@@ -28,7 +28,8 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	cn.scanner, cn.conn, cn.working, err = bufio.NewReader(conn), conn, make(chan string, 1), cn.deviceLogin()
+	cn.scanner, cn.conn, cn.working = bufio.NewReader(conn), conn, make(chan string, 1)
+	err = cn.deviceLogin()
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (cn *connection) deviceVerify(ch chan string, returnKey *bool) {
 					if err != nil {
 						Log.Println(err)
 					} else {
-						sum := fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
+						sum := fmt.Sprintf("%x", sha1.Sum([]byte(dataMap["id"]+time.Now().String())))
 						if key, ok := dataMap["key"]; key == sum && ok {
 						} else {
 							*returnKey = true
