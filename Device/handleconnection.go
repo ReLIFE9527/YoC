@@ -28,11 +28,14 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	cn.scanner, cn.conn, cn.working, err = bufio.NewReader(conn), conn, make(chan string, 1), cn.deviceLogin()
+	cn.scanner, cn.conn, cn.working = bufio.NewReader(conn), conn, make(chan string, 1)
+	err = cn.deviceLogin()
 	if err != nil {
 		return err
 	}
 	defer cn.deviceLogout()
+	cn.actionRefresh = make(chan string)
+	cn.beatBreak = false
 	go connectionHeartBeats(&cn.beatBreak, cn.actionRefresh)
 	var stream string
 	//TODO
@@ -45,9 +48,10 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 			if len(stream) > 0 {
 				cn.actionRefresh <- ""
 				stream, err = Pack.DePackString(stream)
-				if Pack.IsStreamValid([]string{"operation"}, stream) {
+				/*if Pack.IsStreamValid([]string{"operation"}, stream) {
 					cn.streamDispatch(stream)
-				}
+				}*/
+				cn.streamDispatch(stream)
 			}
 		}
 	}
