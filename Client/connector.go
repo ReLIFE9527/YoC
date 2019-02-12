@@ -14,19 +14,57 @@ type Connector struct {
 	addr       string
 	conn       net.Conn
 	readWriter *bufio.ReadWriter
+	refresh    chan string
+	stat       bool
 }
 
-func (connector *Connector) handleConnection(conn net.Conn) (err error) { return err }
+func (connector *Connector) Handle(conn net.Conn) (err error) {
+	connector.conn = conn
+	connector.init()
+	defer func() {
+		_ = conn.Close()
+	}()
+	err = connector.checkAccess()
+	if err != nil {
+		return err
+	}
+	connector.preAction()
+	defer connector.postAction()
+	go connector.connectionHeartBeats()
+	for connector.stat {
+		connector.loop()
+	}
+	return err
+}
 
-func (connector *Connector) connectionHeartBeats(flag *bool, actionRefresh chan string) {
+func (connector *Connector) init() {
+	connector.addr = connector.conn.RemoteAddr().String()
+	connector.readWriter = bufio.NewReadWriter(bufio.NewReader(connector.conn), bufio.NewWriter(connector.conn))
+	connector.stat = true
+	connector.refresh = make(chan string, 1)
+
+	connector.extraInit()
+}
+
+func (connector *Connector) extraInit() {}
+
+func (connector *Connector) checkAccess() error { return nil }
+
+func (connector *Connector) preAction() {}
+
+func (connector *Connector) postAction() {}
+
+func (connector *Connector) loop() {}
+
+func (connector *Connector) connectionHeartBeats() {
 	for {
 		select {
-		case <-actionRefresh:
-			if *flag {
+		case <-connector.refresh:
+			if !connector.stat {
 				return
 			}
 		case <-time.After(time.Minute):
-			*flag = true
+			connector.stat = false
 			break
 		}
 	}
@@ -63,4 +101,10 @@ func (connector *Connector) writeRepeat(packet Pack.Packet, t time.Duration) (er
 		_ = connector.conn.SetReadDeadline(time.Time{})
 		return io.EOF
 	}
+}
+
+func (connector *Connector) clearReadBuffer() error {
+	var n = connector.readWriter.Reader.Buffered()
+	var _, err = connector.readWriter.Discard(n)
+	return err
 }
