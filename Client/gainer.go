@@ -1,0 +1,125 @@
+package Client
+
+import (
+	"../Data"
+	. "../Log"
+	"../Pack"
+	"encoding/json"
+	"io"
+	"time"
+)
+
+type Gainer struct {
+	*Connector
+}
+
+func (gainer *Gainer) switcher(stream Pack.Stream) {
+	var table = Pack.Convert2Map(stream)
+	if action, ok := (*table)["operation"]; ok {
+		gainer.refresh <- ""
+		switch action {
+		case "getOnlineList":
+			gainer.getOnline()
+		default:
+			Log.Println("unknown operation : ", action)
+		}
+	}
+}
+
+func (gainer *Gainer) loop() {
+	var str, _ = gainer.readWriter.ReadString(Pack.TailByte)
+	var packet = Pack.Packet(str)
+	if len(packet) > 0 {
+		gainer.refresh <- ""
+		stream, err := Pack.DePack(packet)
+		if err != nil {
+			Log.Println(err)
+		} else {
+			if Pack.IsStreamValid(stream, []string{"operation"}) {
+
+			}
+		}
+	}
+}
+
+func (gainer *Gainer) checkAccess() error {
+	const loginPassword, loginAccess, loginFail = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
+	err := gainer.writeRepeat(Pack.StreamPack(loginPassword), time.Second)
+	if err != nil {
+		return err
+	}
+	var access = make(chan string, 1)
+	go gainer.verify(access)
+	defer func() {
+		access <- ""
+		time.Sleep(time.Second)
+		<-access
+	}()
+	select {
+	case gainer.addr = <-access:
+		if gainer.addr != "" {
+			err = gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
+			return nil
+		} else {
+			err = gainer.writeRepeat(Pack.StreamPack(loginFail), time.Second)
+			return io.EOF
+		}
+	case <-time.After(time.Second * 10):
+		return io.EOF
+	}
+}
+
+func (gainer *Gainer) verify(ch chan string) {
+	_ = gainer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
+	bytes, _ := gainer.readWriter.ReadString(Pack.TailByte)
+	packet := Pack.Packet(bytes)
+	for len(ch) == 0 {
+		if len(packet) > 0 {
+			stream, err := Pack.DePack(packet)
+			if err != nil {
+				Log.Println(err)
+			} else {
+				if Pack.IsStreamValid(stream, []string{"password"}) {
+					var dataMap = make(map[string]string)
+					err = json.Unmarshal([]byte(stream), &dataMap)
+					if err != nil {
+						Log.Println(err)
+					} else {
+						if dataMap["password"] == clientPassword {
+							ch <- gainer.conn.RemoteAddr().String()
+						} else {
+							ch <- ""
+						}
+					}
+				}
+			}
+		}
+		_ = gainer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
+		bytes, _ = gainer.readWriter.ReadString(Pack.TailByte)
+	}
+	_ = gainer.conn.SetReadDeadline(time.Time{})
+}
+
+func (gainer *Gainer) preAction() {
+	Data.IMClientLogin(gainer.addr)
+	Log.Println(gainer.addr, " : gainer connected")
+}
+
+func (gainer *Gainer) postAction() {
+	Data.IMClientLogout(gainer.addr)
+	Log.Println(gainer.addr, " : gainer disconnected")
+}
+
+func (gainer *Gainer) getOnline() {
+	var online = Data.GetOnlineList()
+	var blocks string
+	for device := range *online {
+		blocks += Pack.BuildBlock("device", device)
+	}
+	var stream = Pack.Blocks2Stream(blocks)
+	packet := Pack.StreamPack(stream)
+	err := gainer.writeRepeat(packet, time.Second)
+	if err != nil {
+		Log.Println(err)
+	}
+}
