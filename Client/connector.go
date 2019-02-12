@@ -94,11 +94,16 @@ func (connector *Connector) writeRepeat(packet Pack.Packet, t time.Duration) (er
 	}()
 	select {
 	case <-ch:
+		connector.refresh <- ""
 		_ = connector.conn.SetReadDeadline(time.Time{})
 		return nil
 	case <-time.After(t):
 		ch <- ""
 		_ = connector.conn.SetReadDeadline(time.Time{})
+		defer func() {
+			time.Sleep(time.Second)
+			<-ch
+		}()
 		return io.EOF
 	}
 }
