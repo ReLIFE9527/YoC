@@ -90,3 +90,16 @@ func Convert2Map(str string) (dst *map[string]string) {
 	}
 	return dst
 }
+
+func Convert2Stream(src *map[string]string) (dst string) {
+	dst = "{"
+	for msg, context := range *src {
+		dst += BuildBlock(msg, context)
+	}
+	dst += "}"
+	return dst
+}
+
+func BuildBlock(src1, src2 string) string {
+	return "\"" + src1 + "\":\"" + src2 + "\""
+}
