@@ -35,17 +35,20 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	}
 	defer cn.deviceLogout()
 	go connectionHeartBeats(&cn.beatBreak, cn.actionRefresh)
-	var stream string
+	var packet Pack.Packet
+	var stream Pack.Stream
+	var str string
 	//TODO
 	for !cn.beatBreak {
 		if cn.operation != "" {
 			cn.operationDispatch()
 		} else {
 			_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-			stream, err = cn.scanner.ReadString(Pack.TailByte)
-			if len(stream) > 0 {
+			str, err = cn.scanner.ReadString(Pack.TailByte)
+			packet = Pack.Packet(str)
+			if len(packet) > 0 {
 				cn.actionRefresh <- ""
-				stream, err = Pack.DePackString(stream)
+				stream, err = Pack.DePackString(packet)
 				cn.streamDispatch(stream)
 			}
 		}
@@ -56,9 +59,10 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 func (cn *connection) deviceVerify(ch chan string, returnKey *bool) {
 	_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 	bytes, _ := cn.scanner.ReadString(Pack.TailByte)
+	var packet = Pack.Packet(bytes)
 	for len(ch) == 0 {
-		if len(bytes) > 0 {
-			str, err := Pack.DePackString(bytes)
+		if len(packet) > 0 {
+			str, err := Pack.DePackString(packet)
 			if err != nil {
 				Log.Println(err)
 			} else {
@@ -100,15 +104,15 @@ func (cn *connection) deviceAccessCheck() (err error) {
 				if err != nil {
 					return err
 				}
-				err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(string(ret[:]))))
+				err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.StreamPack(Pack.Stream(ret[:]))))
 				if err != nil {
 					return io.EOF
 				}
 			}
-			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginDone)))
+			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.StreamPack(loginDone)))
 			return err
 		} else {
-			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginFailed)))
+			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.StreamPack(loginFailed)))
 			return io.EOF
 		}
 	case <-time.After(time.Second * 10):
@@ -147,7 +151,7 @@ func (cn *connection) AddOperation(operation string) error {
 	}
 }
 
-func (cn *connection) streamDispatch(stream string) {
+func (cn *connection) streamDispatch(stream Pack.Stream) {
 	fmt.Println(stream)
 }
 
