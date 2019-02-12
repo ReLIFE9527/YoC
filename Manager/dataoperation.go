@@ -41,8 +41,8 @@ func initDevicesData() error {
 	return nil
 }
 
-func deviceSaveData()error {
-	err :=JsonWrite(&devices)
+func deviceSaveData() error {
+	err := JsonWrite(&devices)
 	return err
 }
 
@@ -94,4 +94,14 @@ func deviceRemoveOutDate() {
 	if err != nil {
 		Log.Println(err)
 	}
+}
+
+func GetOnlineList() *map[string]bool {
+	online := new(map[string]bool)
+	for device, stat := range devices {
+		if stat.isOnline {
+			(*online)[device] = true
+		}
+	}
+	return online
 }
