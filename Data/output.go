@@ -21,13 +21,13 @@ func (e *IMError) Error() string {
 	return e.Obj + " {" + e.Op + ": " + e.Err.Error() + "}"
 }
 
-var devicesMap, clientsMap map[string]map[string]interface{}
+var collectorMap, gainerMap map[string]map[string]interface{}
 
 func IMInit() error {
-	devicesMap = make(map[string]map[string]interface{})
-	clientsMap = make(map[string]map[string]interface{})
+	collectorMap = make(map[string]map[string]interface{})
+	gainerMap = make(map[string]map[string]interface{})
 	imChanInit()
-	err := initDevicesData()
+	err := initPassage()
 	return err
 }
 
@@ -43,7 +43,7 @@ func IMStart(ch chan error) {
 			for len(chanMap["save"]) > 0 {
 				<-chanMap["save"]
 			}
-			err = deviceSaveData()
+			err = passageSave()
 			if err != nil {
 				return
 			}
@@ -85,7 +85,7 @@ const removeUpt = int64(time.Hour * 24 / statUptTime)
 var statUptCount int64
 
 func imDeviceStatUpt() {
-	for device, op := range devicesMap {
+	for device, op := range collectorMap {
 		if op != nil {
 			update(device)
 		}
@@ -106,31 +106,31 @@ func imDeviceRemoveCheck() {
 }
 
 func IMDeviceLogin(id, key string) {
-	devicesMap[id] = make(map[string]interface{})
+	collectorMap[id] = make(map[string]interface{})
 	online(id, key)
 	chanMap["save"] <- ""
 }
 
 func IMDeviceLogout(device string) {
 	offline(device)
-	delete(devicesMap, device)
+	delete(collectorMap, device)
 	chanMap["save"] <- ""
 }
 
 func IMDeviceRegister(addr string, operation string, function interface{}) {
-	devicesMap[addr][operation] = function
+	collectorMap[addr][operation] = function
 }
 
 func IMClientLogin(client string) {
-	clientsMap[client] = make(map[string]interface{})
+	gainerMap[client] = make(map[string]interface{})
 }
 
 func IMClientLogout(client string) {
-	delete(clientsMap, client)
+	delete(gainerMap, client)
 }
 
 func IMClientRegister(addr string, operation string, function interface{}) {
-	clientsMap[addr][operation] = function
+	gainerMap[addr][operation] = function
 }
 
 func imChanInit() {

@@ -32,7 +32,7 @@ func (passage stat) SetStat(stat bool) {
 
 var devices map[string]*stat
 
-func initDevicesData() error {
+func initPassage() error {
 	devices = make(map[string]*stat)
 	err := JsonRead(&devices)
 	if err != nil && !IsJsonEmpty(err) {
@@ -41,7 +41,7 @@ func initDevicesData() error {
 	return nil
 }
 
-func deviceSaveData() error {
+func passageSave() error {
 	err := JsonWrite(&devices)
 	return err
 }
@@ -52,19 +52,19 @@ func online(id, key string) {
 		devices[id].Data = new(repository)
 	}
 	devices[id].Online()
-	devices[id].Data.id = id
-	devices[id].Data.key = key
-	devices[id].Data.lastLogin = time.Now()
+	devices[id].Data.ID = id
+	devices[id].Data.Key = key
+	devices[id].Data.LastLogin = time.Now()
 }
 
 func offline(device string) {
 	devices[device].Offline()
-	devices[device].Data.lastLogin = time.Now()
+	devices[device].Data.LastLogin = time.Now()
 }
 
 func update(id string) {
 	if devices[id] != nil {
-		devices[id].Data.lastLogin = time.Now()
+		devices[id].Data.LastLogin = time.Now()
 	} else {
 	}
 }
@@ -72,7 +72,7 @@ func update(id string) {
 func removeOutDate() {
 	for i, device := range devices {
 		if !device.isOnline {
-			var t1, t2 = time.Now(), device.Data.lastLogin.AddDate(0, 0, 15)
+			var t1, t2 = time.Now(), device.Data.LastLogin.AddDate(0, 0, 15)
 			//var s1, s2= t1.String(), t2.String()
 			//Log.Println(s1 + "\n" + s2)
 			if (t1.YearDay() > t2.YearDay() && t1.Year() == t2.YearDay()) || t1.Year() > t2.Year() {
@@ -80,7 +80,7 @@ func removeOutDate() {
 			}
 		}
 	}
-	err := deviceSaveData()
+	err := passageSave()
 	if err != nil {
 		Log.Println(err)
 	}
@@ -96,5 +96,5 @@ func onlineList(can *map[string]bool) {
 }
 
 func key(id string) string {
-	return devices[id].Data.key
+	return devices[id].Data.Key
 }
