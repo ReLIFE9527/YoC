@@ -70,10 +70,11 @@ func (gainer *Gainer) checkAccess() error {
 }
 
 func (gainer *Gainer) verify(ch chan string) {
-	_ = gainer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-	bytes, _ := gainer.readWriter.ReadString(Pack.TailByte)
-	packet := Pack.Packet(bytes)
+	var bytes string
 	for len(ch) == 0 {
+		_ = gainer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
+		bytes, _ = gainer.readWriter.ReadString(Pack.TailByte)
+		packet := Pack.Packet(bytes)
 		if len(packet) > 0 {
 			stream, err := Pack.DePack(packet)
 			if err != nil {
@@ -94,8 +95,6 @@ func (gainer *Gainer) verify(ch chan string) {
 				}
 			}
 		}
-		_ = gainer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-		bytes, _ = gainer.readWriter.ReadString(Pack.TailByte)
 	}
 	_ = gainer.conn.SetReadDeadline(time.Time{})
 }
