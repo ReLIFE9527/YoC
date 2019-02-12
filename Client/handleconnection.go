@@ -73,6 +73,7 @@ func (cn *connection) clientAccessCheck() (err error) {
 	case cn.addr = <-access:
 		if cn.addr != "" {
 			err = cn.writeRepeat(Pack.StreamPack(loginAccess), time.Second*2)
+			cn.addr = cn.conn.RemoteAddr().String()
 			return err
 		} else {
 			err = cn.writeRepeat(Pack.StreamPack(loginFail), time.Second*2)
