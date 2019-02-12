@@ -43,7 +43,7 @@ func (gainer *Gainer) loop() {
 }
 
 func (gainer *Gainer) checkAccess() error {
-	const loginPassword, loginAccess, loginFail = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
+	const loginPassword, loginAccess, loginFail Pack.Stream = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
 	err := gainer.writeRepeat(Pack.StreamPack(loginPassword), time.Second)
 	if err != nil {
 		return err
@@ -56,8 +56,8 @@ func (gainer *Gainer) checkAccess() error {
 		<-access
 	}()
 	select {
-	case gainer.addr = <-access:
-		if gainer.addr != "" {
+	case stat := <-access:
+		if stat != "" {
 			err = gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
 			return nil
 		} else {
@@ -86,7 +86,7 @@ func (gainer *Gainer) verify(ch chan string) {
 						Log.Println(err)
 					} else {
 						if dataMap["password"] == clientPassword {
-							ch <- gainer.conn.RemoteAddr().String()
+							ch <- "success"
 						} else {
 							ch <- ""
 						}
