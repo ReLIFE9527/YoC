@@ -2,10 +2,10 @@ package main
 
 import (
 	"./Client"
+	"./Data"
 	"./Device"
 	"./EnvPath"
 	"./Log"
-	"./Manager"
 	"bufio"
 	"encoding/json"
 	"io"

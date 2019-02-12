@@ -1,9 +1,9 @@
 package Device
 
 import (
+	"../Data"
+	. "../Data"
 	. "../Log"
-	"../Manager"
-	. "../Manager"
 	"../Pack"
 	"bufio"
 	"crypto/sha1"
@@ -48,7 +48,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 			packet = Pack.Packet(str)
 			if len(packet) > 0 {
 				cn.actionRefresh <- ""
-				stream, err = Pack.DePackString(packet)
+				stream, err = Pack.DePack(packet)
 				cn.streamDispatch(stream)
 			}
 		}
@@ -62,7 +62,7 @@ func (cn *connection) deviceVerify(ch chan string, returnKey *bool) {
 	var packet = Pack.Packet(bytes)
 	for len(ch) == 0 {
 		if len(packet) > 0 {
-			str, err := Pack.DePackString(packet)
+			str, err := Pack.DePack(packet)
 			if err != nil {
 				Log.Println(err)
 			} else {
