@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"io"
 	"net"
-	"strings"
 	"time"
 )
 
@@ -22,6 +21,8 @@ func (connector *Connector) Handle(conn net.Conn) (err error) {
 	connector.conn = conn
 	connector.init()
 	defer func() {
+		_ = connector.clearReadBuffer()
+		_ = connector.readWriter.Flush()
 		_ = conn.Close()
 	}()
 	err = connector.checkAccess()
@@ -73,24 +74,23 @@ func (connector *Connector) connectionHeartBeats() {
 func (connector *Connector) writeRepeat(packet Pack.Packet, t time.Duration) (err error) {
 	var ch = make(chan string, 1)
 	go func() {
-		_, _ = connector.readWriter.WriteString(string(packet))
-		err = connector.readWriter.Flush()
-		if err != nil {
-			Log.Println(err)
-		}
 		var count int
-	repeat:
-		_ = connector.conn.SetReadDeadline(time.Now().Add(t))
-		str, err := connector.readWriter.ReadString(Pack.TailByte)
-		stream, _ := Pack.DePackString(packet)
-		if strings.Contains(str, "done") && Pack.IsStreamValid([]string{"read"}, stream) {
-			count += 2
-		}
-		count++
-		if err != nil && err != io.EOF && count < 3 && len(ch) < 1 {
-			goto repeat
+		for count < 3 && len(ch) < 1 {
+			_ = connector.conn.SetWriteDeadline(time.Now().Add(t))
+			_, err = connector.readWriter.WriteString(string(packet))
+			if err != nil {
+				Log.Println(err)
+			}
+			err = connector.readWriter.Flush()
+			if err != nil && err != io.EOF {
+				Log.Println(err)
+				count++
+			} else {
+				break
+			}
 		}
 		ch <- ""
+		_ = connector.conn.SetWriteDeadline(time.Time{})
 	}()
 	select {
 	case <-ch:
