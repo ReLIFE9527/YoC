@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -18,14 +19,14 @@ type connection struct {
 	addr          string
 	conn          net.Conn
 	heartBreak    bool
-	scanner       *bufio.Reader
+	readWriter    *bufio.ReadWriter
 }
 
 func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	cn.scanner, cn.conn = bufio.NewReader(conn), conn
+	cn.readWriter, cn.conn = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn)), conn
 	err = cn.clientLogin()
 	if err != nil {
 		return err
@@ -38,11 +39,13 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 	_ = cn.conn.SetReadDeadline(time.Time{})
 	//TODO
 	for !cn.heartBreak {
-		stream, err = cn.scanner.ReadString(Pack.TailByte)
+		stream, err = cn.readWriter.ReadString(Pack.TailByte)
 		if len(stream) > 0 {
 			cn.actionRefresh <- ""
 			stream, err = Pack.DePackString(stream)
 			if Pack.IsStreamValid([]string{"operation"}, stream) {
+				n := cn.readWriter.Reader.Buffered()
+				_, _ = cn.readWriter.Discard(n)
 				cn.dispatch(stream)
 			}
 		}
@@ -52,7 +55,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 
 func (cn *connection) clientAccessCheck() (err error) {
 	const loginPassword, loginAccess, loginFail = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
-	err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginPassword)))
+	err = cn.writeRepeat(Pack.PackString(loginPassword), time.Second*2)
 	if err != nil {
 		return err
 	}
@@ -66,10 +69,10 @@ func (cn *connection) clientAccessCheck() (err error) {
 	select {
 	case cn.addr = <-access:
 		if cn.addr != "" {
-			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginAccess)))
+			err = cn.writeRepeat(Pack.PackString(loginAccess), time.Second*2)
 			return err
 		} else {
-			err = writeRepeat(cn.conn, time.Second*2, []byte(Pack.PackString(loginFail)))
+			err = cn.writeRepeat(Pack.PackString(loginFail), time.Second*2)
 			return io.EOF
 		}
 	case <-time.After(time.Second * 10):
@@ -79,7 +82,7 @@ func (cn *connection) clientAccessCheck() (err error) {
 
 func (cn *connection) clientVerify(ch chan string) {
 	_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-	bytes, _ := cn.scanner.ReadString(Pack.TailByte)
+	bytes, _ := cn.readWriter.ReadString(Pack.TailByte)
 	for len(ch) == 0 {
 		if len(bytes) > 0 {
 			str, err := Pack.DePackString(bytes)
@@ -103,7 +106,7 @@ func (cn *connection) clientVerify(ch chan string) {
 			}
 		}
 		_ = cn.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-		bytes, _ = cn.scanner.ReadString(Pack.TailByte)
+		bytes, _ = cn.readWriter.ReadString(Pack.TailByte)
 	}
 }
 
@@ -121,26 +124,62 @@ func (cn *connection) clientLogout() { Data.IMClientLogout(cn.addr) }
 
 func (cn connection) dispatch(operation string) {
 	fmt.Println(operation)
+	var data = Pack.Convert2Map(operation)
+	if op, ok := (*data)["operation"]; ok {
+		switch op {
+		case "getOnline":
+			cn.getOnline()
+		default:
+			Log.Println("operation invalid : ", op)
+			fmt.Println("operation invalid : ", op)
+		}
+	}
 }
 
-func writeRepeat(conn net.Conn, t time.Duration, data []byte) (err error) {
+func (cn connection) writeRepeat(str string, t time.Duration) (err error) {
 	var ch = make(chan string, 1)
 	go func() {
-		_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-		_, err = conn.Write(data)
+		_, _ = cn.readWriter.WriteString(str)
+		err = cn.readWriter.Flush()
+		if err != nil {
+			Log.Println(err)
+		}
 		var count int
-		for err != nil && count < 2 {
-			_ = conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-			_, err = conn.Write(data)
-			count++
+	repeat:
+		_ = cn.conn.SetReadDeadline(time.Now().Add(t))
+		str, err = cn.readWriter.ReadString(Pack.TailByte)
+		if strings.Contains(str, "done") && Pack.IsStreamValid([]string{"read"}, str) {
+			count += 2
+		}
+		count++
+		if err != nil && err != io.EOF && count < 3 && len(ch) < 1 {
+			goto repeat
 		}
 		ch <- ""
 	}()
 	select {
 	case <-ch:
+		_ = cn.conn.SetReadDeadline(time.Time{})
 		return nil
 	case <-time.After(t):
+		ch <- ""
+		_ = cn.conn.SetReadDeadline(time.Time{})
 		return io.EOF
+	}
+}
+
+func (cn *connection) getOnline() {
+	var online, stream = Data.GetOnlineList(), "{"
+	for device := range *online {
+		stream += Pack.BuildBlock("device", device)
+	}
+	stream += "}"
+	if !Pack.IsStreamValid([]string{"device"}, stream) {
+		fmt.Println("stream format error : ", stream)
+	}
+	err := cn.writeRepeat(stream, time.Second)
+	if err != nil {
+		Log.Println(err)
 	}
 }
 
