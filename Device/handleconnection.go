@@ -66,7 +66,7 @@ func (cn *connection) deviceVerify(ch chan string, returnKey *bool) {
 			if err != nil {
 				Log.Println(err)
 			} else {
-				if Pack.IsStreamValid([]string{"id"}, str) {
+				if Pack.IsStreamValid(str, []string{"id"}) {
 					var dataMap = make(map[string]string)
 					err = json.Unmarshal([]byte(str), &dataMap)
 					if err != nil {

@@ -1,8 +1,8 @@
 package Client
 
 import (
+	"../Data"
 	. "../Log"
-	"../Manager"
 	"../Pack"
 	"bufio"
 	"crypto/sha1"
@@ -45,8 +45,8 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 		packet = Pack.Packet(str)
 		if len(packet) > 0 {
 			cn.actionRefresh <- ""
-			stream, err = Pack.DePackString(packet)
-			if Pack.IsStreamValid([]string{"operation"}, stream) {
+			stream, err = Pack.DePack(packet)
+			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				n := cn.readWriter.Reader.Buffered()
 				_, _ = cn.readWriter.Discard(n)
 				cn.dispatch(stream)
@@ -90,11 +90,11 @@ func (cn *connection) clientVerify(ch chan string) {
 	packet := Pack.Packet(bytes)
 	for len(ch) == 0 {
 		if len(packet) > 0 {
-			str, err := Pack.DePackString(packet)
+			str, err := Pack.DePack(packet)
 			if err != nil {
 				Log.Println(err)
 			} else {
-				if Pack.IsStreamValid([]string{"password"}, str) {
+				if Pack.IsStreamValid(str, []string{"password"}) {
 					var dataMap = make(map[string]string)
 					err = json.Unmarshal([]byte(str), &dataMap)
 					if err != nil {
@@ -153,8 +153,8 @@ func (cn connection) writeRepeat(packet Pack.Packet, t time.Duration) (err error
 	repeat:
 		_ = cn.conn.SetReadDeadline(time.Now().Add(t))
 		str, err := cn.readWriter.ReadString(Pack.TailByte)
-		stream, _ := Pack.DePackString(packet)
-		if strings.Contains(str, "done") && Pack.IsStreamValid([]string{"read"}, stream) {
+		stream, _ := Pack.DePack(packet)
+		if strings.Contains(str, "done") && Pack.IsStreamValid(stream, []string{"read"}) {
 			count += 2
 		}
 		count++
@@ -181,7 +181,7 @@ func (cn *connection) getOnline() {
 		stream += Pack.BuildBlock("device", device)
 	}
 	stream += "}"
-	if !Pack.IsStreamValid([]string{"device"}, stream) {
+	if !Pack.IsStreamValid(stream, []string{"device"}) {
 		fmt.Println("stream format error : ", stream)
 	}
 	packet := Pack.StreamPack(stream)
