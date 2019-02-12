@@ -29,6 +29,7 @@ func (cn *connection) handleConnection(conn net.Conn) (err error) {
 		_ = conn.Close()
 	}()
 	cn.scanner, cn.conn, cn.working = bufio.NewReader(conn), conn, make(chan string, 1)
+	time.Sleep(time.Second)
 	err = cn.deviceLogin()
 	if err != nil {
 		return err
