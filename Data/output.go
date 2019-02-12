@@ -87,7 +87,7 @@ var statUptCount int64
 func imDeviceStatUpt() {
 	for device, op := range devicesMap {
 		if op != nil {
-			deviceUpdate(device)
+			update(device)
 		}
 	}
 	statUptCount++
@@ -102,17 +102,17 @@ func imDeviceStatUpt() {
 }
 
 func imDeviceRemoveCheck() {
-	deviceRemoveOutDate()
+	removeOutDate()
 }
 
-func IMDeviceLogin(device string) {
-	devicesMap[device] = make(map[string]interface{})
-	devicesOnline(device)
+func IMDeviceLogin(id, key string) {
+	devicesMap[id] = make(map[string]interface{})
+	online(id, key)
 	chanMap["save"] <- ""
 }
 
 func IMDeviceLogout(device string) {
-	devicesOffline(device)
+	offline(device)
 	delete(devicesMap, device)
 	chanMap["save"] <- ""
 }
@@ -138,4 +138,13 @@ func imChanInit() {
 	for name, buffer := range selectChanList {
 		chanMap[name] = make(chan string, buffer)
 	}
+}
+
+func GetKey(id string) string {
+	return key(id)
+}
+
+func GetOnlineList() (dst *map[string]bool) {
+	onlineList(dst)
+	return dst
 }

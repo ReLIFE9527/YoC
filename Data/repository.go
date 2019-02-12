@@ -6,20 +6,20 @@ import (
 )
 
 type repository struct {
-	Id        string
-	Key       string
-	LastLogin time.Time
+	id        string
+	key       string
+	lastLogin time.Time
 	this      *map[string]interface{}
 }
 
-func (obj *repository) GetMap() map[string]interface{} {
-	var key = reflect.TypeOf(obj)
-	var value = reflect.ValueOf(obj)
-	obj.this = new(map[string]interface{})
+func (stock *repository) GetMap() map[string]interface{} {
+	var key = reflect.TypeOf(stock)
+	var value = reflect.ValueOf(stock)
+	stock.this = new(map[string]interface{})
 	for i := 0; i < key.NumField(); i++ {
 		if key.Field(i).Name != "this" {
-			(*obj.this)[key.Field(i).Name] = value.Field(i)
+			(*stock.this)[key.Field(i).Name] = value.Field(i)
 		}
 	}
-	return *obj.this
+	return *stock.this
 }

@@ -25,7 +25,7 @@ func checkJsonDir() error {
 	return envpath.CheckMakeDir(dir)
 }
 
-func JsonRead(device *map[string]*deviceStat) error {
+func JsonRead(device *map[string]*stat) error {
 	path, err := jsonPath, checkJsonDir()
 	if err != nil {
 		return err
@@ -50,8 +50,8 @@ func JsonRead(device *map[string]*deviceStat) error {
 		if err != nil {
 			return err
 		}
-		(*device)[dc.Id] = new(deviceStat)
-		(*device)[dc.Id].Data = &dc
+		(*device)[dc.id] = new(stat)
+		(*device)[dc.id].Data = &dc
 		bytes, err = scanner.ReadBytes('\n')
 	}
 	defer func() {
@@ -60,7 +60,7 @@ func JsonRead(device *map[string]*deviceStat) error {
 	return nil
 }
 
-func JsonWrite(device *map[string]*deviceStat) error {
+func JsonWrite(device *map[string]*stat) error {
 	path, err := jsonPath, checkJsonDir()
 	if err != nil {
 		return err
