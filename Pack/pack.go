@@ -97,14 +97,19 @@ func Convert2Map(str Stream) (dst *map[string]string) {
 }
 
 func Convert2Stream(src *map[string]string) (dst Stream) {
-	dst = "{"
-	for msg, context := range *src {
-		dst += BuildBlock(msg, context)
+	bytes, err := json.Marshal(src)
+	if err != nil {
+		Log.Println(err)
 	}
-	dst += "}"
+	dst = Stream(bytes)
 	return dst
 }
 
-func BuildBlock(src1, src2 string) Stream {
-	return Stream("\"" + src1 + "\":\"" + src2 + "\"")
+func BuildBlock(src1, src2 string) string {
+	return "\"" + src1 + "\":\"" + src2 + "\""
+}
+
+func Blocks2Stream(src string) Stream {
+	src = "{" + src + "}"
+	return Stream(src)
 }
