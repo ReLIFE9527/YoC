@@ -29,7 +29,7 @@ func StreamPack(src Stream) (dst Packet) {
 	return dst
 }
 
-func DePackString(src Packet) (dst Stream, err error) {
+func DePack(src Packet) (dst Stream, err error) {
 	if int(src[len(src)-1]) == TailByte {
 		src = src[:len(src)-1]
 	}
@@ -77,7 +77,7 @@ func getLength(src Packet) (len int64, err error) {
 	}
 }
 
-func IsStreamValid(properties []string, src Stream) bool {
+func IsStreamValid(src Stream, properties []string) bool {
 	for i := 0; i < len(properties); i++ {
 		var prop = "\"" + properties[i] + "\""
 		if !strings.Contains(string(src), prop) {
