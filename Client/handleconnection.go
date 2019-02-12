@@ -177,7 +177,8 @@ func (cn *connection) getOnline() {
 	if !Pack.IsStreamValid([]string{"device"}, stream) {
 		fmt.Println("stream format error : ", stream)
 	}
-	err := cn.writeRepeat(stream, time.Second)
+	pack := Pack.PackString(stream)
+	err := cn.writeRepeat(pack, time.Second)
 	if err != nil {
 		Log.Println(err)
 	}
