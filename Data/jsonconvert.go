@@ -45,13 +45,13 @@ func JsonRead(device *map[string]*deviceStat) error {
 		if err != nil {
 			return err
 		}
-		var dc dataClass
+		var dc repository
 		err = json.Unmarshal(bytes, &dc)
 		if err != nil {
 			return err
 		}
-		(*device)[dc.DeviceID] = new(deviceStat)
-		(*device)[dc.DeviceID].Data = &dc
+		(*device)[dc.Id] = new(deviceStat)
+		(*device)[dc.Id].Data = &dc
 		bytes, err = scanner.ReadBytes('\n')
 	}
 	defer func() {

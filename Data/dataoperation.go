@@ -7,7 +7,7 @@ import (
 
 type deviceStat struct {
 	isOnline bool
-	Data     *dataClass
+	Data     *repository
 }
 
 func (obj deviceStat) Online() {
@@ -49,7 +49,7 @@ func deviceSaveData() error {
 func devicesOnline(device string) {
 	if devices[device] == nil {
 		devices[device] = new(deviceStat)
-		devices[device].Data = new(dataClass)
+		devices[device].Data = new(repository)
 	}
 	devices[device].Online()
 	devices[device].Data.SetDeviceID(device)
