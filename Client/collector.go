@@ -83,13 +83,15 @@ func (collector *Collector) verify(ch chan string) {
 					var table = Pack.Convert2Map(stream)
 					if id, ok := (*table)["id"]; ok {
 						collector.key = Data.GetKey(id)
-						if key, ok := (*table)["key"]; ok {
+						if key, ok := (*table)["key"]; ok && collector.key != "" {
 							ch <- key
 						} else {
 							key = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
 							ch <- key
 							//override the key
+							//if collector.key=="" {
 							collector.key = key
+							//}
 						}
 					} else {
 						ch <- ""

@@ -75,5 +75,9 @@ func onlineList(can *map[string]bool) {
 }
 
 func key(id string) string {
-	return coStats[id].Data.Key
+	if value, ok := coStats[id]; ok {
+		return value.Data.ID
+	} else {
+		return ""
+	}
 }
