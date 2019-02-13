@@ -5,27 +5,56 @@ import (
 	"net"
 )
 
-type Auditor struct {
-	listener         net.Listener
-	network, address string
+type Functions interface {
+	subInit() error
+	handle(net.Conn)
+	open()
+	listen(chan error)
 }
 
-func (auditor *Auditor) Init() error {
-	auditor.network = "udp"
-	auditor.address = "localhost:12345"
+type Auditor struct {
+	Functions
+}
+
+type auditor struct {
+	Functions
+	listener         net.Listener
+	address, network string
+	conn             Connector
+}
+
+func (auditor *Auditor) Init(f Functions) error {
+	auditor.Functions = f
 	err := auditor.subInit()
-	auditor.listener, err = net.Listen(auditor.network, auditor.address)
 	if err == nil {
-		Log.Println(auditor.network, auditor.address, "Waiting for connection...")
+		auditor.open()
 	}
 	return err
 }
 
-func (auditor *Auditor) subInit() error {
+func (auditor *Auditor) Listen(errCh chan error) {
+	auditor.listen(errCh)
+}
+
+func (auditor *auditor) subInit() error {
+	auditor.network = "udp"
+	auditor.address = "localhost:12345"
 	return nil
 }
 
-func (auditor *Auditor) Listen(errCh chan error) {
+func (auditor *auditor) handle(conn net.Conn) {
+	return
+}
+
+func (auditor *auditor) open() {
+	var err error
+	auditor.listener, err = net.Listen(auditor.network, auditor.address)
+	if err == nil {
+		Log.Println(auditor.network, auditor.address, "Waiting for connection...")
+	}
+}
+
+func (auditor *auditor) listen(errCh chan error) {
 	for len(errCh) == 0 {
 		conn, err := auditor.listener.Accept()
 		if err != nil {
@@ -41,12 +70,8 @@ func (auditor *Auditor) Listen(errCh chan error) {
 	}()
 }
 
-func (auditor *Auditor) handle(conn net.Conn) {
-	return
-}
-
 type Auditor32375 struct {
-	*Auditor
+	auditor
 }
 
 func (auditor *Auditor32375) subInit() error {
@@ -56,16 +81,15 @@ func (auditor *Auditor32375) subInit() error {
 }
 
 func (auditor *Auditor32375) handle(conn net.Conn) {
-	var connector *Connector
-	connector = new(Collector{})
-	err := connector.Handle(conn)
+	auditor.conn = new(Collector)
+	err := auditor.conn.Handle(conn)
 	if err != nil {
 		Log.Println(err)
 	}
 }
 
 type Auditor32376 struct {
-	*Auditor
+	auditor
 	Password string
 }
 
@@ -76,9 +100,8 @@ func (auditor *Auditor32376) subInit() error {
 }
 
 func (auditor *Auditor32376) handle(conn net.Conn) {
-	var connector *Connector
-	connector = new(Gainer{password: auditor.Password})
-	err := connector.Handle(conn)
+	auditor.conn = &Gainer{password: auditor.Password}
+	err := auditor.conn.Handle(conn)
 	if err != nil {
 		Log.Println(err)
 	}
