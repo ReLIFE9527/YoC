@@ -1,6 +1,7 @@
 package Client
 
 import (
+	"../Data"
 	. "../Log"
 	"../Pack"
 	"crypto/sha1"
@@ -81,8 +82,7 @@ func (collector *Collector) verify(ch chan string) {
 				if Pack.IsStreamValid(stream, []string{"id"}) {
 					var table = Pack.Convert2Map(stream)
 					if id, ok := (*table)["id"]; ok {
-						//get key from IM
-						id += ""
+						collector.key = Data.GetKey(id)
 						if key, ok := (*table)["key"]; ok {
 							ch <- key
 						} else {
