@@ -29,7 +29,7 @@ func StreamPack(src Stream) (dst Packet) {
 	return dst
 }
 
-func DePackString(src Packet) (dst Stream, err error) {
+func DePack(src Packet) (dst Stream, err error) {
 	if int(src[len(src)-1]) == TailByte {
 		src = src[:len(src)-1]
 	}
@@ -77,7 +77,7 @@ func getLength(src Packet) (len int64, err error) {
 	}
 }
 
-func IsStreamValid(properties []string, src Stream) bool {
+func IsStreamValid(src Stream, properties []string) bool {
 	for i := 0; i < len(properties); i++ {
 		var prop = "\"" + properties[i] + "\""
 		if !strings.Contains(string(src), prop) {
@@ -97,14 +97,19 @@ func Convert2Map(str Stream) (dst *map[string]string) {
 }
 
 func Convert2Stream(src *map[string]string) (dst Stream) {
-	dst = "{"
-	for msg, context := range *src {
-		dst += BuildBlock(msg, context)
+	bytes, err := json.Marshal(src)
+	if err != nil {
+		Log.Println(err)
 	}
-	dst += "}"
+	dst = Stream(bytes)
 	return dst
 }
 
-func BuildBlock(src1, src2 string) Stream {
-	return Stream("\"" + src1 + "\":\"" + src2 + "\"")
+func BuildBlock(src1, src2 string) string {
+	return "\"" + src1 + "\":\"" + src2 + "\""
+}
+
+func Blocks2Stream(src string) Stream {
+	src = "{" + src + "}"
+	return Stream(src)
 }

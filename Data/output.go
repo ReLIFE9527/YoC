@@ -21,17 +21,17 @@ func (e *IMError) Error() string {
 	return e.Obj + " {" + e.Op + ": " + e.Err.Error() + "}"
 }
 
-var devicesMap, clientsMap map[string]map[string]interface{}
+var collectorMap, gainerMap map[string]map[string]interface{}
 
-func IMInit() error {
-	devicesMap = make(map[string]map[string]interface{})
-	clientsMap = make(map[string]map[string]interface{})
-	imChanInit()
-	err := initDevicesData()
+func StorageInit() error {
+	collectorMap = make(map[string]map[string]interface{})
+	gainerMap = make(map[string]map[string]interface{})
+	chanInit()
+	err := initPassage()
 	return err
 }
 
-func IMStart(ch chan error) {
+func StorageStart(ch chan error) {
 	var err error
 	//TODO
 	chanMap["deviceUpt"] <- ""
@@ -43,7 +43,7 @@ func IMStart(ch chan error) {
 			for len(chanMap["save"]) > 0 {
 				<-chanMap["save"]
 			}
-			err = deviceSaveData()
+			err = passageSave()
 			if err != nil {
 				return
 			}
@@ -51,7 +51,7 @@ func IMStart(ch chan error) {
 			go func(ch chan string) {
 				upt := make(chan string, 1)
 				go func(ch chan string) {
-					imDeviceStatUpt()
+					statUpt()
 					ch <- ""
 				}(upt)
 				time.Sleep(time.Second * 5)
@@ -61,7 +61,7 @@ func IMStart(ch chan error) {
 		case <-chanMap["remove"]:
 			var remove = make(chan string, 1)
 			go func(ch chan string) {
-				imDeviceRemoveCheck()
+				removeCheck()
 				ch <- ""
 			}(remove)
 			<-remove
@@ -74,8 +74,9 @@ func IMStart(ch chan error) {
 	}(err)
 }
 
-func IMShutDown() error {
-	return nil
+func StorageShutDown() error {
+	err := passageSave()
+	return err
 }
 
 const statUptTime = time.Second * 5
@@ -84,10 +85,10 @@ const removeUpt = int64(time.Hour * 24 / statUptTime)
 
 var statUptCount int64
 
-func imDeviceStatUpt() {
-	for device, op := range devicesMap {
+func statUpt() {
+	for device, op := range collectorMap {
 		if op != nil {
-			deviceUpdate(device)
+			update(device)
 		}
 	}
 	statUptCount++
@@ -101,41 +102,50 @@ func imDeviceStatUpt() {
 
 }
 
-func imDeviceRemoveCheck() {
-	deviceRemoveOutDate()
+func removeCheck() {
+	removeOutDate()
 }
 
-func IMDeviceLogin(device string) {
-	devicesMap[device] = make(map[string]interface{})
-	devicesOnline(device)
+func CollectorLogin(id, key string) {
+	collectorMap[id] = make(map[string]interface{})
+	online(id, key)
 	chanMap["save"] <- ""
 }
 
-func IMDeviceLogout(device string) {
-	devicesOffline(device)
-	delete(devicesMap, device)
+func CollectorLogout(device string) {
+	offline(device)
+	delete(collectorMap, device)
 	chanMap["save"] <- ""
 }
 
-func IMDeviceRegister(addr string, operation string, function interface{}) {
-	devicesMap[addr][operation] = function
+func CollectorRegister(addr string, operation string, function interface{}) {
+	collectorMap[addr][operation] = function
 }
 
-func IMClientLogin(client string) {
-	clientsMap[client] = make(map[string]interface{})
+func GainerLogin(client string) {
+	gainerMap[client] = make(map[string]interface{})
 }
 
-func IMClientLogout(client string) {
-	delete(clientsMap, client)
+func GainerLogout(client string) {
+	delete(gainerMap, client)
 }
 
-func IMClientRegister(addr string, operation string, function interface{}) {
-	clientsMap[addr][operation] = function
+func GainerRegister(addr string, operation string, function interface{}) {
+	gainerMap[addr][operation] = function
 }
 
-func imChanInit() {
+func chanInit() {
 	chanMap = make(map[string]chan string)
 	for name, buffer := range selectChanList {
 		chanMap[name] = make(chan string, buffer)
 	}
+}
+
+func GetKey(id string) string {
+	return key(id)
+}
+
+func GetOnlineList() (dst *map[string]bool) {
+	onlineList(dst)
+	return dst
 }

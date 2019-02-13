@@ -25,7 +25,7 @@ func checkJsonDir() error {
 	return envpath.CheckMakeDir(dir)
 }
 
-func JsonRead(device *map[string]*deviceStat) error {
+func JsonRead(table *map[string]*stat) error {
 	path, err := jsonPath, checkJsonDir()
 	if err != nil {
 		return err
@@ -45,13 +45,13 @@ func JsonRead(device *map[string]*deviceStat) error {
 		if err != nil {
 			return err
 		}
-		var dc dataClass
+		var dc repository
 		err = json.Unmarshal(bytes, &dc)
 		if err != nil {
 			return err
 		}
-		(*device)[dc.DeviceID] = new(deviceStat)
-		(*device)[dc.DeviceID].Data = &dc
+		(*table)[dc.ID] = new(stat)
+		(*table)[dc.ID].Data = &dc
 		bytes, err = scanner.ReadBytes('\n')
 	}
 	defer func() {
@@ -60,7 +60,7 @@ func JsonRead(device *map[string]*deviceStat) error {
 	return nil
 }
 
-func JsonWrite(device *map[string]*deviceStat) error {
+func JsonWrite(table *map[string]*stat) error {
 	path, err := jsonPath, checkJsonDir()
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func JsonWrite(device *map[string]*deviceStat) error {
 	if err != nil {
 		return err
 	}
-	for _, ds := range *device {
+	for _, ds := range *table {
 		if ds == nil {
 			continue
 		}
