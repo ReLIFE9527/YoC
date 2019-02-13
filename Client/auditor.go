@@ -5,7 +5,7 @@ import (
 	"net"
 )
 
-type Functions interface {
+type auFunc interface {
 	subInit() error
 	handle(net.Conn)
 	open()
@@ -13,18 +13,18 @@ type Functions interface {
 }
 
 type Auditor struct {
-	Functions
+	auFunc
 }
 
 type auditor struct {
-	Functions
+	auFunc
 	listener         net.Listener
 	address, network string
 	conn             Connector
 }
 
-func (auditor *Auditor) Init(f Functions) error {
-	auditor.Functions = f
+func (auditor *Auditor) Init(f auFunc) error {
+	auditor.auFunc = f
 	err := auditor.subInit()
 	if err == nil {
 		auditor.open()
@@ -81,7 +81,7 @@ func (auditor *Auditor32375) subInit() error {
 }
 
 func (auditor *Auditor32375) handle(conn net.Conn) {
-	auditor.conn = new(Collector)
+	auditor.conn.Init(new(Collector))
 	err := auditor.conn.Handle(conn)
 	if err != nil {
 		Log.Println(err)
@@ -100,7 +100,7 @@ func (auditor *Auditor32376) subInit() error {
 }
 
 func (auditor *Auditor32376) handle(conn net.Conn) {
-	auditor.conn = &Gainer{password: auditor.Password}
+	auditor.conn.Init(&Gainer{password: auditor.Password})
 	err := auditor.conn.Handle(conn)
 	if err != nil {
 		Log.Println(err)
