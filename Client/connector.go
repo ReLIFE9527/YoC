@@ -9,11 +9,25 @@ import (
 	"time"
 )
 
-type Connector interface {
-	Handle(conn net.Conn) error
+type Connector struct {
+	cnFunc
+}
+
+type cnFunc interface {
+	clearReadBuffer() error
+	checkAccess() error
+	init(net.Conn)
+	eliminate()
+	extraInit()
+	preAction()
+	postAction()
+	connectionHeartBeats()
+	stats() bool
+	loop()
 }
 
 type connector struct {
+	cnFunc
 	addr       string
 	conn       net.Conn
 	readWriter *bufio.ReadWriter
@@ -21,14 +35,14 @@ type connector struct {
 	stat       bool
 }
 
-func (connector *connector) Handle(conn net.Conn) (err error) {
-	connector.conn = conn
-	connector.init()
-	defer func() {
-		_ = connector.clearReadBuffer()
-		_ = connector.readWriter.Flush()
-		_ = conn.Close()
-	}()
+func (connector *Connector) Init(f cnFunc) {
+	connector.cnFunc = f
+}
+
+func (connector *Connector) Handle(conn net.Conn) (err error) {
+	connector.init(conn)
+	connector.extraInit()
+	defer connector.eliminate()
 	err = connector.checkAccess()
 	if err != nil {
 		return err
@@ -36,19 +50,17 @@ func (connector *connector) Handle(conn net.Conn) (err error) {
 	connector.preAction()
 	defer connector.postAction()
 	go connector.connectionHeartBeats()
-	for connector.stat {
+	for connector.stats() {
 		connector.loop()
 	}
 	return err
 }
 
-func (connector *connector) init() {
+func (connector *connector) init(conn net.Conn) {
 	connector.addr = connector.conn.RemoteAddr().String()
 	connector.readWriter = bufio.NewReadWriter(bufio.NewReader(connector.conn), bufio.NewWriter(connector.conn))
 	connector.stat = true
 	connector.refresh = make(chan string, 1)
-
-	connector.extraInit()
 }
 
 func (connector *connector) extraInit() {}
@@ -60,6 +72,8 @@ func (connector *connector) preAction() {}
 func (connector *connector) postAction() {}
 
 func (connector *connector) loop() {}
+
+func (connector *connector) stats() bool { return connector.stat }
 
 func (connector *connector) connectionHeartBeats() {
 	for {
@@ -116,4 +130,19 @@ func (connector *connector) clearReadBuffer() error {
 	var n = connector.readWriter.Reader.Buffered()
 	var _, err = connector.readWriter.Discard(n)
 	return err
+}
+
+func (connector *connector) eliminate() {
+	err := connector.clearReadBuffer()
+	if err != nil {
+		Log.Println(err)
+	}
+	err = connector.readWriter.Flush()
+	if err != nil {
+		Log.Println(err)
+	}
+	err = connector.conn.Close()
+	if err != nil {
+		Log.Println(err)
+	}
 }
