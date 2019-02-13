@@ -75,7 +75,8 @@ func StorageStart(ch chan error) {
 }
 
 func StorageShutDown() error {
-	return nil
+	err := passageSave()
+	return err
 }
 
 const statUptTime = time.Second * 5
