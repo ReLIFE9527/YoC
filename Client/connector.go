@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-type Connector struct {
+type Connector interface {
+	Handle(conn net.Conn) error
+}
+
+type connector struct {
 	addr       string
 	conn       net.Conn
 	readWriter *bufio.ReadWriter
@@ -17,7 +21,7 @@ type Connector struct {
 	stat       bool
 }
 
-func (connector *Connector) Handle(conn net.Conn) (err error) {
+func (connector *connector) Handle(conn net.Conn) (err error) {
 	connector.conn = conn
 	connector.init()
 	defer func() {
@@ -38,7 +42,7 @@ func (connector *Connector) Handle(conn net.Conn) (err error) {
 	return err
 }
 
-func (connector *Connector) init() {
+func (connector *connector) init() {
 	connector.addr = connector.conn.RemoteAddr().String()
 	connector.readWriter = bufio.NewReadWriter(bufio.NewReader(connector.conn), bufio.NewWriter(connector.conn))
 	connector.stat = true
@@ -47,17 +51,17 @@ func (connector *Connector) init() {
 	connector.extraInit()
 }
 
-func (connector *Connector) extraInit() {}
+func (connector *connector) extraInit() {}
 
-func (connector *Connector) checkAccess() error { return nil }
+func (connector *connector) checkAccess() error { return nil }
 
-func (connector *Connector) preAction() {}
+func (connector *connector) preAction() {}
 
-func (connector *Connector) postAction() {}
+func (connector *connector) postAction() {}
 
-func (connector *Connector) loop() {}
+func (connector *connector) loop() {}
 
-func (connector *Connector) connectionHeartBeats() {
+func (connector *connector) connectionHeartBeats() {
 	for {
 		select {
 		case <-connector.refresh:
@@ -71,7 +75,7 @@ func (connector *Connector) connectionHeartBeats() {
 	}
 }
 
-func (connector *Connector) writeRepeat(packet Pack.Packet, t time.Duration) (err error) {
+func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (err error) {
 	var ch = make(chan string, 1)
 	go func() {
 		var count int
@@ -108,7 +112,7 @@ func (connector *Connector) writeRepeat(packet Pack.Packet, t time.Duration) (er
 	}
 }
 
-func (connector *Connector) clearReadBuffer() error {
+func (connector *connector) clearReadBuffer() error {
 	var n = connector.readWriter.Reader.Buffered()
 	var _, err = connector.readWriter.Discard(n)
 	return err

@@ -11,7 +11,7 @@ import (
 )
 
 type Collector struct {
-	*Connector
+	connector
 	id        string
 	key       string
 	operation string

@@ -10,7 +10,7 @@ import (
 )
 
 type Gainer struct {
-	*Connector
+	connector
 	password string
 }
 
