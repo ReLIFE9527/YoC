@@ -125,14 +125,14 @@ func (cn *connection) deviceLogin() (err error) {
 	if err != nil {
 		return err
 	}
-	Data.IMDeviceLogin(cn.addr)
-	Data.IMDeviceRegister(cn.addr, "add", cn.AddOperation)
+	Data.CollectorLogin(cn.addr)
+	Data.CollectorRegister(cn.addr, "add", cn.AddOperation)
 	Log.Println(cn.addr, " : device connected")
 	return err
 }
 
 func (cn *connection) deviceLogout() {
-	IMDeviceLogout(cn.addr)
+	CollectorLogout(cn.addr)
 }
 
 func (cn *connection) operationDispatch() {

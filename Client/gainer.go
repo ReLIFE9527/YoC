@@ -100,12 +100,12 @@ func (gainer *Gainer) verify(ch chan string) {
 }
 
 func (gainer *Gainer) preAction() {
-	Data.IMClientLogin(gainer.addr)
+	Data.AuditorLogin(gainer.addr)
 	Log.Println(gainer.addr, " : gainer connected")
 }
 
 func (gainer *Gainer) postAction() {
-	Data.IMClientLogout(gainer.addr)
+	Data.AuditorLogout(gainer.addr)
 	Log.Println(gainer.addr, " : gainer disconnected")
 }
 

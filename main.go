@@ -36,7 +36,7 @@ func initAll() error {
 	if err != nil {
 		return err
 	}
-	err = Data.IMInit()
+	err = Data.StorageInit()
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func start() error {
 	var err error
 	var startTime = time.Now()
 	lastTick := startTime.Minute()
-	go Data.IMStart(moduleChannel["IM"])
+	go Data.StorageStart(moduleChannel["IM"])
 	go Device.LinkHandle(moduleChannel["Device"])
 	go Client.LinkHandle(moduleChannel["Client"])
 	for true {
@@ -77,7 +77,7 @@ func start() error {
 }
 
 func exit(ec error) {
-	err := Data.IMShutDown()
+	err := Data.StorageShutDown()
 	if err != nil {
 		YoCLog.Log.Println(err)
 	}
