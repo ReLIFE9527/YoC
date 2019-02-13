@@ -19,7 +19,22 @@ type Collector struct {
 }
 
 func (collector *Collector) loop() {
-
+	if collector.operation != "" {
+		//TODO
+	} else {
+		str, _ := collector.readWriter.ReadString(Pack.TailByte)
+		packet := Pack.Packet(str)
+		if len(packet) > 0 {
+			stream, err := Pack.DePack(packet)
+			if err != nil {
+				return
+			}
+			fmt.Println(stream)
+			if Pack.IsStreamValid(stream, []string{"operation"}) {
+				//TODO
+			}
+		}
+	}
 }
 
 func (collector *Collector) extraInit() {
@@ -27,11 +42,14 @@ func (collector *Collector) extraInit() {
 }
 
 func (collector *Collector) preAction() {
-
+	Data.CollectorLogin(collector.id, collector.key)
+	Log.Println(collector.addr, " : collector connected")
+	Log.Println("id : ", collector.id)
 }
 
 func (collector *Collector) postAction() {
-
+	Data.CollectorLogout(collector.id)
+	Log.Println(collector.addr, " : collector disconnected")
 }
 
 func (collector *Collector) checkAccess() error {
@@ -94,7 +112,7 @@ func (collector *Collector) verify(ch chan string) {
 							//}
 						}
 					} else {
-						ch <- ""
+						ch <- "nil"
 					}
 				}
 			}
