@@ -3,7 +3,6 @@ package main
 import (
 	"./Client"
 	"./Data"
-	"./Device"
 	"./EnvPath"
 	"./Log"
 	"bufio"
@@ -19,11 +18,13 @@ var global = map[string]string{
 }
 
 var moduleChannelProperty = map[string]int{
-	"IM":     1,
-	"Device": 1,
-	"Client": 1,
+	"repository": 1,
+	"port:32375": 1,
+	"port:32376": 1,
 }
 var moduleChannel map[string]chan error
+
+var auditors []Client.Auditor
 
 func initAll() error {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -40,11 +41,13 @@ func initAll() error {
 	if err != nil {
 		return err
 	}
-	err = Device.LinkInit()
+	auditors = make([]Client.Auditor, 2)
+	var t = new(Client.Auditor32375)
+	err = auditors[0].Init(t)
 	if err != nil {
 		return err
 	}
-	err = Client.LinkInit(global["Password"])
+	err = auditors[1].Init(&Client.Auditor32376{Password: global["Password"]})
 	return err
 }
 
@@ -53,16 +56,16 @@ func start() error {
 	var err error
 	var startTime = time.Now()
 	lastTick := startTime.Minute()
-	go Data.StorageStart(moduleChannel["IM"])
-	go Device.LinkHandle(moduleChannel["Device"])
-	go Client.LinkHandle(moduleChannel["Client"])
+	go Data.StorageStart(moduleChannel["repository"])
+	go auditors[0].Listen(moduleChannel["port:32375"])
+	go auditors[1].Listen(moduleChannel["port:32376"])
 	for true {
 		select {
-		case re := <-moduleChannel["IM"]:
+		case re := <-moduleChannel["repository"]:
 			return re
-		case re := <-moduleChannel["Device"]:
+		case re := <-moduleChannel["port:32375"]:
 			return re
-		case re := <-moduleChannel["Client"]:
+		case re := <-moduleChannel["port:32376"]:
 			return re
 		default:
 			<-time.After(time.Second)
