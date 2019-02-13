@@ -51,13 +51,32 @@ type Auditor32375 struct {
 
 func (auditor *Auditor32375) subInit() error {
 	auditor.network = "tcp"
-	auditor.address = "32375"
+	auditor.address = "localhost:32375"
 	return nil
 }
 
 func (auditor *Auditor32375) handle(conn net.Conn) {
 	var connector *Connector
 	connector = new(Collector{})
+	err := connector.Handle(conn)
+	if err != nil {
+		Log.Println(err)
+	}
+}
+
+type Auditor32376 struct {
+	*Auditor
+}
+
+func (auditor *Auditor32376) subInit() error {
+	auditor.network = "tcp"
+	auditor.address = "localhost:32376"
+	return nil
+}
+
+func (auditor *Auditor32376) handle(conn net.Conn) {
+	var connector *Connector
+	connector = new(Gainer{})
 	err := connector.Handle(conn)
 	if err != nil {
 		Log.Println(err)
