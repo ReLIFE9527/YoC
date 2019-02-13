@@ -122,15 +122,15 @@ func CollectorRegister(addr string, operation string, function interface{}) {
 	collectorMap[addr][operation] = function
 }
 
-func AuditorLogin(client string) {
+func GainerLogin(client string) {
 	gainerMap[client] = make(map[string]interface{})
 }
 
-func AuditorLogout(client string) {
+func GainerLogout(client string) {
 	delete(gainerMap, client)
 }
 
-func AuditorRegister(addr string, operation string, function interface{}) {
+func GainerRegister(addr string, operation string, function interface{}) {
 	gainerMap[addr][operation] = function
 }
 

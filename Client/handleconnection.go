@@ -120,12 +120,12 @@ func (cn *connection) clientLogin() (err error) {
 	if err != nil {
 		return err
 	}
-	Data.AuditorLogin(cn.addr)
+	Data.GainerLogin(cn.addr)
 	Log.Println(cn.addr, " : client connected")
 	return err
 }
 
-func (cn *connection) clientLogout() { Data.AuditorLogout(cn.addr) }
+func (cn *connection) clientLogout() { Data.GainerLogout(cn.addr) }
 
 func (cn connection) dispatch(operation Pack.Stream) {
 	fmt.Println(operation)
