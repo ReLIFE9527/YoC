@@ -44,3 +44,22 @@ func (auditor *Auditor) Listen(errCh chan error) {
 func (auditor *Auditor) handle(conn net.Conn) {
 	return
 }
+
+type Auditor32375 struct {
+	*Auditor
+}
+
+func (auditor *Auditor32375) subInit() error {
+	auditor.network = "tcp"
+	auditor.address = "32375"
+	return nil
+}
+
+func (auditor *Auditor32375) handle(conn net.Conn) {
+	var connector *Connector
+	connector = new(Collector{})
+	err := connector.Handle(conn)
+	if err != nil {
+		Log.Println(err)
+	}
+}
