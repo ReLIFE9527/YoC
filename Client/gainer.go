@@ -11,6 +11,7 @@ import (
 
 type Gainer struct {
 	*Connector
+	password string
 }
 
 func (gainer *Gainer) switcher(stream Pack.Stream) {
@@ -86,7 +87,7 @@ func (gainer *Gainer) verify(ch chan string) {
 					if err != nil {
 						Log.Println(err)
 					} else {
-						if dataMap["password"] == clientPassword {
+						if dataMap["password"] == gainer.password {
 							ch <- "success"
 						} else {
 							ch <- ""

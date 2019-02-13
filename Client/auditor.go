@@ -66,6 +66,7 @@ func (auditor *Auditor32375) handle(conn net.Conn) {
 
 type Auditor32376 struct {
 	*Auditor
+	Password string
 }
 
 func (auditor *Auditor32376) subInit() error {
@@ -76,7 +77,7 @@ func (auditor *Auditor32376) subInit() error {
 
 func (auditor *Auditor32376) handle(conn net.Conn) {
 	var connector *Connector
-	connector = new(Gainer{})
+	connector = new(Gainer{password: auditor.Password})
 	err := connector.Handle(conn)
 	if err != nil {
 		Log.Println(err)
