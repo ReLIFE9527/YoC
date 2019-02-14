@@ -51,7 +51,7 @@ func openLog() *os.File {
 	if err != nil {
 		log.Fatal(err)
 	}
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0x755)
 	if err != nil {
 		log.Println("failed to load log file at: " + filePath)
 		log.Fatal(err)
