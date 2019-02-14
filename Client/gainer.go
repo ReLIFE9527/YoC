@@ -37,7 +37,8 @@ func (gainer *Gainer) loop() {
 			Log.Println(err)
 		} else {
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
-
+				//TODO
+				gainer.testReceiver(stream)
 			}
 		}
 	}
