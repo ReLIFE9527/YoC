@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"os"
 )
 
@@ -97,10 +98,12 @@ func ReadGlobal(global map[string]string) (err error) {
 	scanner := bufio.NewReader(file)
 	bytes, err := scanner.ReadBytes('\n')
 	if err != nil && err != io.EOF {
+		log.Println(err)
 		return err
 	}
 	err = json.Unmarshal(bytes, &data)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	if ps, ok := data["Password"]; !ok || ps == "" {
@@ -113,14 +116,17 @@ func ReadGlobal(global map[string]string) (err error) {
 		global = data
 		file, err = os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 		globalInfo, err := json.Marshal(global)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 		_, err = file.Write(globalInfo)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 	}
