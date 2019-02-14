@@ -32,16 +32,8 @@ func LogExit(ec error) {
 }
 
 func openLog() *os.File {
-	var filePath = envpath.GetAppDir() + "/logs"
+	var filePath = envpath.GetAppDir() + "/logs/YoC.log"
 	stat, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		err = os.Mkdir(filePath, os.ModePerm)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	filePath += "/YoC.log"
-	stat, err = os.Stat(filePath)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -54,7 +46,7 @@ func openLog() *os.File {
 			}
 		}
 	}
-	dir, err := envpath.GetParentDir(filePath)
+	dir, _ := envpath.GetParentDir(filePath)
 	err = envpath.CheckMakeDir(dir)
 	if err != nil {
 		log.Fatal(err)
