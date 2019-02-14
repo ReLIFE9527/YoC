@@ -36,7 +36,6 @@ func (connector *Connector) Handle(conn net.Conn) (err error) {
 
 type cnFunc interface {
 	checkAccess() error
-	clearReadBuffer() error
 	connectionHeartBeats()
 	eliminate()
 	extraInit()
@@ -45,8 +44,6 @@ type cnFunc interface {
 	postAction()
 	preAction()
 	stats() bool
-	testReceiver(Pack.Stream)
-	writeRepeat(Pack.Packet, time.Duration) error
 }
 
 type connector struct {
