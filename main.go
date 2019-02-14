@@ -4,7 +4,7 @@ import (
 	"./Client"
 	"./Data"
 	"./Log"
-	"fmt"
+	"log"
 	"runtime"
 	"time"
 )
@@ -27,24 +27,24 @@ func initAll() error {
 	go initChannel()
 	var err = YoCLog.LogInit()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 	err = Data.ReadGlobal(global)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 	err = Data.StorageInit()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 	auditors = make([]Client.Auditor, 2)
 	var t = new(Client.Auditor32375)
 	err = auditors[0].Init(t)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 	err = auditors[1].Init(&Client.Auditor32376{Password: global["Password"]})
