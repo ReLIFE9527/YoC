@@ -58,12 +58,13 @@ type connector struct {
 	stat       bool
 }
 
-func (connector *connector) checkAccess() error { return io.EOF }
-func (connector *connector) extraInit()         {}
-func (connector *connector) loop()              {}
-func (connector *connector) postAction()        {}
-func (connector *connector) preAction()         {}
-func (connector *connector) stats() bool        { return connector.stat }
+func (connector *connector) checkAccess() error              { return io.EOF }
+func (connector *connector) extraInit()                      {}
+func (connector *connector) loop()                           {}
+func (connector *connector) postAction()                     {}
+func (connector *connector) preAction()                      {}
+func (connector *connector) stats() bool                     { return connector.stat }
+func (connector *connector) testReceiver(stream Pack.Stream) { Log.Println(stream) }
 
 func (connector *connector) clearReadBuffer() error {
 	var n = connector.readWriter.Reader.Buffered()
@@ -106,10 +107,6 @@ func (connector *connector) init(conn net.Conn) {
 	connector.readWriter = bufio.NewReadWriter(bufio.NewReader(connector.conn), bufio.NewWriter(connector.conn))
 	connector.stat = true
 	connector.refresh = make(chan string, 1)
-}
-
-func (connector *connector) testReceiver(stream Pack.Stream) {
-	Log.Println(stream)
 }
 
 func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (err error) {
