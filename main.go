@@ -14,7 +14,7 @@ import (
 )
 
 var global = map[string]string{
-	"Version": "0.0.8",
+	"Version": "0.1.1",
 }
 
 var moduleChannelProperty = map[string]int{
