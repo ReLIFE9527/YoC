@@ -20,7 +20,7 @@ var appDir = func() string {
 	case "linux":
 		return "/home"
 	default:
-		log.Fatal("opration system type err: " + runtime.GOOS)
+		log.Fatal("operation system type err: " + runtime.GOOS)
 		return ""
 	}
 }
