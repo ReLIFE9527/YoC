@@ -103,8 +103,7 @@ func ReadGlobal(global map[string]string) (err error) {
 	}
 	err = json.Unmarshal(bytes, &data)
 	if err != nil {
-		log.Println(err)
-		return err
+		Log.Println(err)
 	}
 	if ps, ok := data["Password"]; !ok || ps == "" {
 		data["Password"] = "YoCProject"
