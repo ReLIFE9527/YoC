@@ -9,7 +9,7 @@ type auFunc interface {
 	subInit() error
 	handle(net.Conn)
 	open()
-	listen(chan error)
+	listen(chan error, chan net.Conn)
 }
 
 type Auditor struct {
@@ -33,7 +33,15 @@ func (auditor *Auditor) Init(f auFunc) error {
 }
 
 func (auditor *Auditor) Listen(errCh chan error) {
-	auditor.listen(errCh)
+	var handle = make(chan net.Conn)
+	go auditor.listen(errCh, handle)
+	for len(errCh) == 0 {
+		select {
+		case conn := <-handle:
+			auditor.handle(conn)
+			//case <-time.After(time.Millisecond * 100):
+		}
+	}
 }
 
 func (auditor *auditor) subInit() error {
@@ -42,7 +50,7 @@ func (auditor *auditor) subInit() error {
 	return nil
 }
 
-func (auditor *auditor) handle(conn net.Conn) {
+func (auditor *auditor) handle(net.Conn) {
 	return
 }
 
@@ -54,13 +62,13 @@ func (auditor *auditor) open() {
 	}
 }
 
-func (auditor *auditor) listen(errCh chan error) {
+func (auditor *auditor) listen(errCh chan error, handle chan net.Conn) {
 	for len(errCh) == 0 {
 		conn, err := auditor.listener.Accept()
 		if err != nil {
 			errCh <- err
 		} else {
-			go auditor.handle(conn)
+			handle <- conn
 		}
 	}
 	defer func() {
