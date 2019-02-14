@@ -33,7 +33,6 @@ func StorageInit() error {
 
 func StorageStart(ch chan error) {
 	var err error
-	//TODO
 	chanMap["deviceUpt"] <- ""
 	chanMap["remove"] <- ""
 	for true {
