@@ -18,7 +18,15 @@ var appDir = func() string {
 		}
 		return filepath.ToSlash(path)
 	case "linux":
-		return "/home"
+		path, err := filepath.Abs("./")
+		if err != nil {
+			log.Fatal(err)
+		}
+		path, err = GetParentDir(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return path
 	default:
 		log.Fatal("operation system type err: " + runtime.GOOS)
 		return ""
