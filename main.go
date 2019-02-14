@@ -47,7 +47,6 @@ func initAll() error {
 }
 
 func start() error {
-	// TODO
 	var err error
 	var startTime = time.Now()
 	lastTick := startTime.Minute()
