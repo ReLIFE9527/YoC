@@ -43,13 +43,13 @@ func (connector *Connector) Handle(conn net.Conn) (err error) {
 	connector.init(conn)
 	connector.extraInit()
 	defer connector.eliminate()
+	go connector.connectionHeartBeats()
 	err = connector.checkAccess()
 	if err != nil {
 		return err
 	}
 	connector.preAction()
 	defer connector.postAction()
-	go connector.connectionHeartBeats()
 	for connector.stats() {
 		connector.loop()
 	}
@@ -57,6 +57,7 @@ func (connector *Connector) Handle(conn net.Conn) (err error) {
 }
 
 func (connector *connector) init(conn net.Conn) {
+	connector.conn = conn
 	connector.addr = connector.conn.RemoteAddr().String()
 	connector.readWriter = bufio.NewReadWriter(bufio.NewReader(connector.conn), bufio.NewWriter(connector.conn))
 	connector.stat = true
@@ -91,9 +92,10 @@ func (connector *connector) connectionHeartBeats() {
 
 func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (err error) {
 	var ch = make(chan string, 1)
+	var stat = true
 	go func() {
 		var count int
-		for count < 3 && len(ch) < 1 {
+		for count < 3 && stat {
 			_ = connector.conn.SetWriteDeadline(time.Now().Add(t))
 			_, err = connector.readWriter.WriteString(string(packet))
 			if err != nil {
@@ -113,15 +115,9 @@ func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (er
 	select {
 	case <-ch:
 		connector.refresh <- ""
-		_ = connector.conn.SetReadDeadline(time.Time{})
 		return nil
 	case <-time.After(t):
-		ch <- ""
-		_ = connector.conn.SetReadDeadline(time.Time{})
-		defer func() {
-			time.Sleep(time.Second)
-			<-ch
-		}()
+		_ = connector.conn.SetWriteDeadline(time.Time{})
 		return io.EOF
 	}
 }
