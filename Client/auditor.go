@@ -84,7 +84,7 @@ type Auditor32375 struct {
 
 func (auditor *Auditor32375) subInit() error {
 	auditor.network = "tcp"
-	auditor.address = "localhost:32375"
+	auditor.address = ":32375"
 	return nil
 }
 
@@ -103,7 +103,7 @@ type Auditor32376 struct {
 
 func (auditor *Auditor32376) subInit() error {
 	auditor.network = "tcp"
-	auditor.address = "localhost:32376"
+	auditor.address = ":32376"
 	return nil
 }
 
