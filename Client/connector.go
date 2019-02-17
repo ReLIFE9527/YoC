@@ -13,17 +13,37 @@ type Connector struct {
 	cnFunc
 }
 
+func (connector *Connector) Init(f cnFunc) {
+	connector.cnFunc = f
+}
+
+func (connector *Connector) Handle(conn net.Conn) (err error) {
+	connector.init(conn)
+	connector.extraInit()
+	defer connector.eliminate()
+	go connector.connectionHeartBeats()
+	err = connector.checkAccess()
+	if err != nil {
+		return err
+	}
+	connector.preAction()
+	defer connector.postAction()
+	for connector.stats() {
+		connector.loop()
+	}
+	return err
+}
+
 type cnFunc interface {
-	clearReadBuffer() error
 	checkAccess() error
-	init(net.Conn)
+	connectionHeartBeats()
 	eliminate()
 	extraInit()
-	preAction()
-	postAction()
-	connectionHeartBeats()
-	stats() bool
+	init(net.Conn)
 	loop()
+	postAction()
+	preAction()
+	stats() bool
 }
 
 type connector struct {
@@ -35,45 +55,19 @@ type connector struct {
 	stat       bool
 }
 
-func (connector *Connector) Init(f cnFunc) {
-	connector.cnFunc = f
-}
+func (connector *connector) checkAccess() error              { return io.EOF }
+func (connector *connector) extraInit()                      {}
+func (connector *connector) loop()                           {}
+func (connector *connector) postAction()                     {}
+func (connector *connector) preAction()                      {}
+func (connector *connector) stats() bool                     { return connector.stat }
+func (connector *connector) testReceiver(stream Pack.Stream) { Log.Println(stream) }
 
-func (connector *Connector) Handle(conn net.Conn) (err error) {
-	connector.init(conn)
-	connector.extraInit()
-	defer connector.eliminate()
-	err = connector.checkAccess()
-	if err != nil {
-		return err
-	}
-	connector.preAction()
-	defer connector.postAction()
-	go connector.connectionHeartBeats()
-	for connector.stats() {
-		connector.loop()
-	}
+func (connector *connector) clearReadBuffer() error {
+	var n = connector.readWriter.Reader.Buffered()
+	var _, err = connector.readWriter.Discard(n)
 	return err
 }
-
-func (connector *connector) init(conn net.Conn) {
-	connector.addr = connector.conn.RemoteAddr().String()
-	connector.readWriter = bufio.NewReadWriter(bufio.NewReader(connector.conn), bufio.NewWriter(connector.conn))
-	connector.stat = true
-	connector.refresh = make(chan string, 1)
-}
-
-func (connector *connector) extraInit() {}
-
-func (connector *connector) checkAccess() error { return nil }
-
-func (connector *connector) preAction() {}
-
-func (connector *connector) postAction() {}
-
-func (connector *connector) loop() {}
-
-func (connector *connector) stats() bool { return connector.stat }
 
 func (connector *connector) connectionHeartBeats() {
 	for {
@@ -89,11 +83,35 @@ func (connector *connector) connectionHeartBeats() {
 	}
 }
 
+func (connector *connector) eliminate() {
+	err := connector.clearReadBuffer()
+	if err != nil {
+		Log.Println(err)
+	}
+	err = connector.readWriter.Flush()
+	if err != nil {
+		Log.Println(err)
+	}
+	err = connector.conn.Close()
+	if err != nil {
+		Log.Println(err)
+	}
+}
+
+func (connector *connector) init(conn net.Conn) {
+	connector.conn = conn
+	connector.addr = connector.conn.RemoteAddr().String()
+	connector.readWriter = bufio.NewReadWriter(bufio.NewReader(connector.conn), bufio.NewWriter(connector.conn))
+	connector.stat = true
+	connector.refresh = make(chan string, 1)
+}
+
 func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (err error) {
 	var ch = make(chan string, 1)
+	var stat = true
 	go func() {
 		var count int
-		for count < 3 && len(ch) < 1 {
+		for count < 3 && stat {
 			_ = connector.conn.SetWriteDeadline(time.Now().Add(t))
 			_, err = connector.readWriter.WriteString(string(packet))
 			if err != nil {
@@ -113,36 +131,9 @@ func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (er
 	select {
 	case <-ch:
 		connector.refresh <- ""
-		_ = connector.conn.SetReadDeadline(time.Time{})
 		return nil
 	case <-time.After(t):
-		ch <- ""
-		_ = connector.conn.SetReadDeadline(time.Time{})
-		defer func() {
-			time.Sleep(time.Second)
-			<-ch
-		}()
+		_ = connector.conn.SetWriteDeadline(time.Time{})
 		return io.EOF
-	}
-}
-
-func (connector *connector) clearReadBuffer() error {
-	var n = connector.readWriter.Reader.Buffered()
-	var _, err = connector.readWriter.Discard(n)
-	return err
-}
-
-func (connector *connector) eliminate() {
-	err := connector.clearReadBuffer()
-	if err != nil {
-		Log.Println(err)
-	}
-	err = connector.readWriter.Flush()
-	if err != nil {
-		Log.Println(err)
-	}
-	err = connector.conn.Close()
-	if err != nil {
-		Log.Println(err)
 	}
 }

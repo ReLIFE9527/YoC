@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var appDir = func()string {
+var appDir = func() string {
 	switch runtime.GOOS {
 	case "windows":
 		path, err := filepath.Abs("./")
@@ -18,18 +18,26 @@ var appDir = func()string {
 		}
 		return filepath.ToSlash(path)
 	case "linux":
-		return "/root/"
+		path, err := filepath.Abs("./")
+		if err != nil {
+			log.Fatal(err)
+		}
+		path, err = GetParentDir(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return path
 	default:
-		log.Fatal("opration system type err: " + runtime.GOOS)
+		log.Fatal("operation system type err: " + runtime.GOOS)
 		return ""
 	}
 }
 
-func GetAppDir()string {
+func GetAppDir() string {
 	return appDir()
 }
 
-func GetParentDir(srcPath string) (dstPath string,err error) {
+func GetParentDir(srcPath string) (dstPath string, err error) {
 	if srcPath[len(srcPath)-1] == '/' {
 		srcPath = srcPath[:len(srcPath)-1]
 	}
@@ -47,7 +55,7 @@ func CheckMakeDir(dir string) error {
 	return err
 }
 
-func GetSubPath(srcPath string,subDir string)(dstPath string,err error) {
+func GetSubPath(srcPath string, subDir string) (dstPath string, err error) {
 	if srcPath[len(srcPath)-1] == '/' {
 		srcPath = srcPath[:len(srcPath)-1]
 	}
@@ -59,7 +67,7 @@ func GetSubPath(srcPath string,subDir string)(dstPath string,err error) {
 	return dstPath, nil
 }
 
-func GetSubFile(srcPath string,subFile string)(dstPath string,err error) {
+func GetSubFile(srcPath string, subFile string) (dstPath string, err error) {
 	if srcPath[len(srcPath)-1] == '/' {
 		srcPath = srcPath[:len(srcPath)-1]
 	}

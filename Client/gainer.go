@@ -37,7 +37,8 @@ func (gainer *Gainer) loop() {
 			Log.Println(err)
 		} else {
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
-
+				//TODO
+				gainer.testReceiver(stream)
 			}
 		}
 	}
@@ -51,21 +52,21 @@ func (gainer *Gainer) checkAccess() error {
 	}
 	var access = make(chan string, 1)
 	go gainer.verify(access)
-	defer func() {
-		access <- ""
-		time.Sleep(time.Second)
-		<-access
-	}()
 	select {
 	case stat := <-access:
 		if stat != "" {
 			err = gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
-			return nil
+			return err
 		} else {
-			err = gainer.writeRepeat(Pack.StreamPack(loginFail), time.Second)
+			_ = gainer.writeRepeat(Pack.StreamPack(loginFail), time.Second)
 			return io.EOF
 		}
 	case <-time.After(time.Second * 10):
+		go func() {
+			access <- ""
+			time.Sleep(time.Second)
+			<-access
+		}()
 		return io.EOF
 	}
 }

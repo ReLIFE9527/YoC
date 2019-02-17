@@ -46,12 +46,12 @@ func openLog() *os.File {
 			}
 		}
 	}
-	dir, err := envpath.GetParentDir(filePath)
+	dir, _ := envpath.GetParentDir(filePath)
 	err = envpath.CheckMakeDir(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, os.ModePerm)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		log.Println("failed to load log file at: " + filePath)
 		log.Fatal(err)
