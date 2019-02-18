@@ -1,10 +1,7 @@
-
-.idea/workspace.xml
-.idea/vcs.xml
 logs/
 YoC.info
 json/YoC.json
 main.exe
 main
-
 YoC\.bin
+.idea/
