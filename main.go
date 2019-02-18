@@ -53,8 +53,6 @@ func initAll() error {
 
 func start() error {
 	var err error
-	var startTime = time.Now()
-	lastTick := startTime.Minute()
 	go Data.StorageStart(moduleChannel["repository"])
 	go auditors[0].Listen(moduleChannel["port:32375"])
 	go auditors[1].Listen(moduleChannel["port:32376"])
@@ -66,13 +64,8 @@ func start() error {
 			return re
 		case re := <-moduleChannel["port:32376"]:
 			return re
-		default:
-			<-time.After(time.Second)
-			t := time.Now()
-			if t.Second() == startTime.Second() && lastTick-t.Minute()%10 == 0 {
-				YoCLog.Log.Println("minute tick ", t)
-				lastTick = t.Minute()
-			}
+		case <-time.After(time.Minute*10):
+				YoCLog.Log.Println("time tick :",time.Now())
 		}
 	}
 	return err

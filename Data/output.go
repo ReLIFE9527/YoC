@@ -58,19 +58,15 @@ func StorageStart(ch chan error) {
 				ch <- ""
 			}(chanMap["deviceUpt"])
 		case <-chanMap["remove"]:
-			var remove = make(chan string, 1)
+			var remove= make(chan string, 1)
 			go func(ch chan string) {
 				removeCheck()
 				ch <- ""
 			}(remove)
 			<-remove
-		default:
-			time.Sleep(time.Microsecond)
 		}
 	}
-	defer func(e error) {
-		ch <- e
-	}(err)
+	ch <- err
 }
 
 func StorageShutDown() error {
