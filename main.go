@@ -4,12 +4,13 @@ import (
 	"./Client"
 	"./Data"
 	"./Log"
+	"log"
 	"runtime"
 	"time"
 )
 
 var global = map[string]string{
-	"Version": "0.1.1",
+	"Version": "0.2.1",
 }
 
 var moduleChannelProperty = map[string]int{
@@ -26,20 +27,24 @@ func initAll() error {
 	go initChannel()
 	var err = YoCLog.LogInit()
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	err = Data.ReadGlobal(global)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	err = Data.StorageInit()
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	auditors = make([]Client.Auditor, 2)
 	var t = new(Client.Auditor32375)
 	err = auditors[0].Init(t)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	err = auditors[1].Init(&Client.Auditor32376{Password: global["Password"]})
@@ -48,8 +53,6 @@ func initAll() error {
 
 func start() error {
 	var err error
-	var startTime = time.Now()
-	lastTick := startTime.Minute()
 	go Data.StorageStart(moduleChannel["repository"])
 	go auditors[0].Listen(moduleChannel["port:32375"])
 	go auditors[1].Listen(moduleChannel["port:32376"])
@@ -61,13 +64,8 @@ func start() error {
 			return re
 		case re := <-moduleChannel["port:32376"]:
 			return re
-		default:
-			<-time.After(time.Second)
-			t := time.Now()
-			if t.Second() == startTime.Second() && lastTick-t.Minute()%10 == 0 {
-				YoCLog.Log.Println("minute tick ", t)
-				lastTick = t.Minute()
-			}
+		case <-time.After(time.Minute*10):
+				YoCLog.Log.Println("time tick :",time.Now())
 		}
 	}
 	return err
