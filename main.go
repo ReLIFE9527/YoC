@@ -10,7 +10,7 @@ import (
 )
 
 var global = map[string]string{
-	"Version": "0.2.0",
+	"Version": "0.2.1",
 }
 
 var moduleChannelProperty = map[string]int{
