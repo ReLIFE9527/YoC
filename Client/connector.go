@@ -4,6 +4,7 @@ import (
 	. "../Log"
 	"../Pack"
 	"bufio"
+	"fmt"
 	"io"
 	"net"
 	"time"
@@ -18,6 +19,8 @@ func (connector *Connector) Init(f cnFunc) {
 }
 
 func (connector *Connector) Handle(conn net.Conn) (err error) {
+	Log.Println(conn.RemoteAddr(), "trying to connect")
+	fmt.Println(conn.RemoteAddr(), "trying to connect")
 	connector.init(conn)
 	connector.extraInit()
 	defer connector.eliminate()
