@@ -59,8 +59,8 @@ func (collector *Collector) checkAccess() error {
 	go collector.verify(access)
 	select {
 	case key := <-access:
-		if key != "" {
-			stream := Pack.Convert2Stream(&map[string]string{"key": key})
+		if key == "nil" {
+			stream := Pack.Convert2Stream(&map[string]string{"key": collector.key})
 			packet := Pack.StreamPack(stream)
 			err := collector.writeRepeat(packet, time.Second)
 			if err != nil {
@@ -101,19 +101,18 @@ func (collector *Collector) verify(ch chan string) {
 				if Pack.IsStreamValid(stream, []string{"id"}) {
 					var table = Pack.Convert2Map(stream)
 					if id, ok := (*table)["id"]; ok {
+						collector.id = id
 						collector.key = Data.GetKey(id)
 						if key, ok := (*table)["key"]; ok && collector.key != "" {
 							ch <- key
 						} else {
 							key = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
-							ch <- key
+							ch <- "nil"
 							//override the key
 							//if collector.key=="" {
 							collector.key = key
 							//}
 						}
-					} else {
-						ch <- "nil"
 					}
 				}
 			}
