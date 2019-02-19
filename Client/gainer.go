@@ -38,6 +38,8 @@ func (gainer *Gainer) loop() {
 		} else {
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				//TODO
+			}
+			if Pack.IsStreamValid(stream, []string{"test"}) {
 				gainer.testReceiver(stream)
 			}
 		}

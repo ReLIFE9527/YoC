@@ -32,6 +32,8 @@ func (collector *Collector) loop() {
 			fmt.Println(stream)
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				//TODO
+			}
+			if Pack.IsStreamValid(stream, []string{"test"}) {
 				collector.testReceiver(stream)
 			}
 		}
