@@ -38,7 +38,12 @@ func (gainer *Gainer) loop() {
 		} else {
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				//TODO
+			}
+			if Pack.IsStreamValid(stream, []string{"test"}) {
 				gainer.testReceiver(stream)
+			}
+			if Pack.IsStreamValid(stream, []string{"stat"}) {
+				gainer.refreshLink(stream)
 			}
 		}
 	}
@@ -54,7 +59,7 @@ func (gainer *Gainer) checkAccess() error {
 	go gainer.verify(access)
 	select {
 	case stat := <-access:
-		if stat != "" {
+		if stat == "success" {
 			err = gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
 			return err
 		} else {
@@ -74,7 +79,6 @@ func (gainer *Gainer) checkAccess() error {
 func (gainer *Gainer) verify(ch chan string) {
 	var bytes string
 	for len(ch) == 0 {
-		_ = gainer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 		bytes, _ = gainer.readWriter.ReadString(Pack.TailByte)
 		packet := Pack.Packet(bytes)
 		if len(packet) > 0 {
@@ -90,15 +94,16 @@ func (gainer *Gainer) verify(ch chan string) {
 					} else {
 						if dataMap["password"] == gainer.password {
 							ch <- "success"
+							return
 						} else {
-							ch <- ""
+							ch <- "fail"
+							return
 						}
 					}
 				}
 			}
 		}
 	}
-	_ = gainer.conn.SetReadDeadline(time.Time{})
 }
 
 func (gainer *Gainer) preAction() {

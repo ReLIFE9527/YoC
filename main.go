@@ -10,7 +10,8 @@ import (
 )
 
 var global = map[string]string{
-	"Version": "0.2.1",
+	"Version":  "0.2.2",
+	"Password": "",
 }
 
 var moduleChannelProperty = map[string]int{
@@ -30,7 +31,7 @@ func initAll() error {
 		log.Println(err)
 		return err
 	}
-	err = Data.ReadGlobal(global)
+	err = Data.ReadGlobal(&global)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -64,8 +65,8 @@ func start() error {
 			return re
 		case re := <-moduleChannel["port:32376"]:
 			return re
-		case <-time.After(time.Minute*10):
-				YoCLog.Log.Println("time tick :",time.Now())
+		case <-time.After(time.Minute * 10):
+			YoCLog.Log.Println("time tick :", time.Now())
 		}
 	}
 	return err
