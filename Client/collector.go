@@ -32,7 +32,12 @@ func (collector *Collector) loop() {
 			fmt.Println(stream)
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				//TODO
+			}
+			if Pack.IsStreamValid(stream, []string{"test"}) {
 				collector.testReceiver(stream)
+			}
+			if Pack.IsStreamValid(stream, []string{"stat"}) {
+				collector.refreshLink(stream)
 			}
 		}
 	}
@@ -59,8 +64,8 @@ func (collector *Collector) checkAccess() error {
 	go collector.verify(access)
 	select {
 	case key := <-access:
-		if key != "" {
-			stream := Pack.Convert2Stream(&map[string]string{"key": key})
+		if key == "nil" {
+			stream := Pack.Convert2Stream(&map[string]string{"key": collector.key})
 			packet := Pack.StreamPack(stream)
 			err := collector.writeRepeat(packet, time.Second)
 			if err != nil {
@@ -90,7 +95,6 @@ func (collector *Collector) checkAccess() error {
 func (collector *Collector) verify(ch chan string) {
 	var bytes string
 	for len(ch) == 0 {
-		_ = collector.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 		bytes, _ = collector.readWriter.ReadString(Pack.TailByte)
 		packet := Pack.Packet(bytes)
 		if len(packet) > 0 {
@@ -101,23 +105,23 @@ func (collector *Collector) verify(ch chan string) {
 				if Pack.IsStreamValid(stream, []string{"id"}) {
 					var table = Pack.Convert2Map(stream)
 					if id, ok := (*table)["id"]; ok {
+						collector.id = id
 						collector.key = Data.GetKey(id)
 						if key, ok := (*table)["key"]; ok && collector.key != "" {
 							ch <- key
+							return
 						} else {
 							key = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
-							ch <- key
+							ch <- "nil"
 							//override the key
 							//if collector.key=="" {
 							collector.key = key
 							//}
+							return
 						}
-					} else {
-						ch <- "nil"
 					}
 				}
 			}
 		}
 	}
-	_ = collector.conn.SetReadDeadline(time.Time{})
 }

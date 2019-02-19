@@ -90,7 +90,7 @@ func JsonWrite(table *map[string]*stat) error {
 	return nil
 }
 
-func ReadGlobal(global map[string]string) (err error) {
+func ReadGlobal(global *map[string]string) (err error) {
 	var data = make(map[string]string)
 	filePath := envpath.GetAppDir()
 	filePath += "/YoC.info"
@@ -108,11 +108,14 @@ func ReadGlobal(global map[string]string) (err error) {
 	if ps, ok := data["Password"]; !ok || ps == "" {
 		data["Password"] = "YoCProject"
 	}
-	if data["Version"] == global["Version"] {
-		global = data
-	} else {
-		data["Version"] = global["Version"]
-		global = data
+	for key, value := range data {
+		if _, ok := (*global)[key]; ok {
+			if key != "Version" {
+				(*global)[key] = value
+			}
+		}
+	}
+	if data["Version"] != (*global)["Version"] {
 		file, err = os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 		if err != nil {
 			log.Println(err)
@@ -129,5 +132,5 @@ func ReadGlobal(global map[string]string) (err error) {
 			return err
 		}
 	}
-	return err
+	return nil
 }
