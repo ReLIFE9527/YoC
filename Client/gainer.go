@@ -54,7 +54,7 @@ func (gainer *Gainer) checkAccess() error {
 	go gainer.verify(access)
 	select {
 	case stat := <-access:
-		if stat != "" {
+		if stat == "success" {
 			err = gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
 			return err
 		} else {
@@ -91,7 +91,7 @@ func (gainer *Gainer) verify(ch chan string) {
 						if dataMap["password"] == gainer.password {
 							ch <- "success"
 						} else {
-							ch <- ""
+							ch <- "fail"
 						}
 					}
 				}
