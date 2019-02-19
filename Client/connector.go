@@ -1,7 +1,7 @@
 package Client
 
 import (
-	. "../Log"
+	. "../Debug"
 	"../Pack"
 	"bufio"
 	"encoding/json"
@@ -20,7 +20,7 @@ func (connector *Connector) Init(f cnFunc) {
 }
 
 func (connector *Connector) Handle(conn net.Conn) (err error) {
-	Log.Println(conn.RemoteAddr(), "trying to connect")
+	DebugLogger.Println(conn.RemoteAddr(), "trying to connect")
 	fmt.Println(conn.RemoteAddr(), "trying to connect")
 	connector.init(conn)
 	connector.extraInit()
@@ -89,15 +89,15 @@ func (connector *connector) connectionHeartBeats() {
 func (connector *connector) eliminate() {
 	err := connector.clearReadBuffer()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 	err = connector.readWriter.Flush()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 	err = connector.conn.Close()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }
 
@@ -113,7 +113,7 @@ func (connector *connector) refreshLink(stream Pack.Stream) {
 	var statMap = make(map[string]string)
 	err := json.Unmarshal([]byte(stream), &statMap)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 		return
 	}
 	if stat, ok := statMap["stat"]; ok {
@@ -122,14 +122,14 @@ func (connector *connector) refreshLink(stream Pack.Stream) {
 			connector.refresh <- ""
 		case "close":
 			connector.stat = false
-			Log.Println(connector.addr, "close received")
+			DebugLogger.Println(connector.addr, "close received")
 		default:
 		}
 	}
 }
 
 func (connector *connector) testReceiver(stream Pack.Stream) {
-	Log.Println(stream)
+	DebugLogger.Println(stream)
 	fmt.Println(stream)
 	connector.refresh <- ""
 }
@@ -143,11 +143,11 @@ func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (er
 			_ = connector.conn.SetWriteDeadline(time.Now().Add(t))
 			_, err = connector.readWriter.WriteString(string(packet))
 			if err != nil {
-				Log.Println(err)
+				DebugLogger.Println(err)
 			}
 			err = connector.readWriter.Flush()
 			if err != nil && err != io.EOF {
-				Log.Println(err)
+				DebugLogger.Println(err)
 				count++
 			} else {
 				break

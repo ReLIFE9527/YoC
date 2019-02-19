@@ -2,7 +2,7 @@ package Client
 
 import (
 	"../Data"
-	. "../Log"
+	. "../Debug"
 	"../Pack"
 	"crypto/sha1"
 	"fmt"
@@ -49,13 +49,13 @@ func (collector *Collector) extraInit() {
 
 func (collector *Collector) preAction() {
 	Data.CollectorLogin(collector.id, collector.key)
-	Log.Println(collector.addr, " : collector connected")
-	Log.Println("id : ", collector.id)
+	DebugLogger.Println(collector.addr, " : collector connected")
+	DebugLogger.Println("id : ", collector.id)
 }
 
 func (collector *Collector) postAction() {
 	Data.CollectorLogout(collector.id)
-	Log.Println(collector.addr, " : collector disconnected")
+	DebugLogger.Println(collector.addr, " : collector disconnected")
 }
 
 func (collector *Collector) checkAccess() error {
@@ -100,7 +100,7 @@ func (collector *Collector) verify(ch chan string) {
 		if len(packet) > 0 {
 			stream, err := Pack.DePack(packet)
 			if err != nil {
-				Log.Println(err)
+				DebugLogger.Println(err)
 			} else {
 				if Pack.IsStreamValid(stream, []string{"id"}) {
 					var table = Pack.Convert2Map(stream)

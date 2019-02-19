@@ -2,7 +2,7 @@ package Client
 
 import (
 	"../Data"
-	. "../Log"
+	. "../Debug"
 	"../Pack"
 	"encoding/json"
 	"io"
@@ -22,7 +22,7 @@ func (gainer *Gainer) switcher(stream Pack.Stream) {
 		case "getOnlineList":
 			gainer.getOnline()
 		default:
-			Log.Println("unknown operation : ", action)
+			DebugLogger.Println("unknown operation : ", action)
 		}
 	}
 }
@@ -34,7 +34,7 @@ func (gainer *Gainer) loop() {
 		gainer.refresh <- ""
 		stream, err := Pack.DePack(packet)
 		if err != nil {
-			Log.Println(err)
+			DebugLogger.Println(err)
 		} else {
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				//TODO
@@ -84,13 +84,13 @@ func (gainer *Gainer) verify(ch chan string) {
 		if len(packet) > 0 {
 			stream, err := Pack.DePack(packet)
 			if err != nil {
-				Log.Println(err)
+				DebugLogger.Println(err)
 			} else {
 				if Pack.IsStreamValid(stream, []string{"password"}) {
 					var dataMap = make(map[string]string)
 					err = json.Unmarshal([]byte(stream), &dataMap)
 					if err != nil {
-						Log.Println(err)
+						DebugLogger.Println(err)
 					} else {
 						if dataMap["password"] == gainer.password {
 							ch <- "success"
@@ -108,12 +108,12 @@ func (gainer *Gainer) verify(ch chan string) {
 
 func (gainer *Gainer) preAction() {
 	Data.GainerLogin(gainer.addr)
-	Log.Println(gainer.addr, " : gainer connected")
+	DebugLogger.Println(gainer.addr, " : gainer connected")
 }
 
 func (gainer *Gainer) postAction() {
 	Data.GainerLogout(gainer.addr)
-	Log.Println(gainer.addr, " : gainer disconnected")
+	DebugLogger.Println(gainer.addr, " : gainer disconnected")
 }
 
 func (gainer *Gainer) getOnline() {
@@ -126,6 +126,6 @@ func (gainer *Gainer) getOnline() {
 	packet := Pack.StreamPack(stream)
 	err := gainer.writeRepeat(packet, time.Second)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }

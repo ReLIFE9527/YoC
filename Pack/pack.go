@@ -1,7 +1,7 @@
 package Pack
 
 import (
-	. "../Log"
+	. "../Debug"
 	"encoding/json"
 	"errors"
 	"strconv"
@@ -51,7 +51,7 @@ func DePack(src Packet) (dst Stream, err error) {
 			}
 			dst = dst[:len(dst)-2]
 			if int64(len(dst)) != length {
-				Log.Println("length err : ", src, " ", dst)
+				DebugLogger.Println("length err : ", src, " ", dst)
 			}
 		}
 	}
@@ -91,7 +91,7 @@ func Convert2Map(str Stream) (dst *map[string]string) {
 	dst = new(map[string]string)
 	err := json.Unmarshal([]byte(str), dst)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 	return dst
 }
@@ -99,7 +99,7 @@ func Convert2Map(str Stream) (dst *map[string]string) {
 func Convert2Stream(src *map[string]string) (dst Stream) {
 	bytes, err := json.Marshal(src)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 	dst = Stream(bytes)
 	return dst

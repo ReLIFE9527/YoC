@@ -1,7 +1,7 @@
 package Data
 
 import (
-	. "../Log"
+	. "../Debug"
 	"time"
 )
 
@@ -46,7 +46,7 @@ func update(id string) {
 	if coStats[id] != nil {
 		coStats[id].Data.LastLogin = time.Now()
 	} else {
-		Log.Println("can not find target id : ", id)
+		DebugLogger.Println("can not find target id : ", id)
 	}
 }
 
@@ -61,7 +61,7 @@ func removeOutDate() {
 	}
 	err := passageSave()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }
 

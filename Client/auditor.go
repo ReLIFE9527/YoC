@@ -1,7 +1,7 @@
 package Client
 
 import (
-	. "../Log"
+	. "../Debug"
 	"net"
 )
 
@@ -58,7 +58,7 @@ func (auditor *auditor) open() {
 	var err error
 	auditor.listener, err = net.Listen(auditor.network, auditor.address)
 	if err == nil {
-		Log.Println(auditor.network, auditor.address, "Waiting for connection...")
+		DebugLogger.Println(auditor.network, auditor.address, "Waiting for connection...")
 	}
 }
 
@@ -73,8 +73,8 @@ func (auditor *auditor) listen(errCh chan error, handle chan net.Conn) {
 	}
 	defer func() {
 		err := auditor.listener.Close()
-		Log.Println(err)
-		Log.Println(auditor.network, auditor.address, "listener closed.")
+		DebugLogger.Println(err)
+		DebugLogger.Println(auditor.network, auditor.address, "listener closed.")
 	}()
 }
 
@@ -92,7 +92,7 @@ func (auditor *Auditor32375) handle(conn net.Conn) {
 	auditor.conn.Init(new(Collector))
 	err := auditor.conn.Handle(conn)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }
 
@@ -111,6 +111,6 @@ func (auditor *Auditor32376) handle(conn net.Conn) {
 	auditor.conn.Init(&Gainer{password: auditor.Password})
 	err := auditor.conn.Handle(conn)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }

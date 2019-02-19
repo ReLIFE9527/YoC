@@ -3,7 +3,7 @@ package main
 import (
 	"./Client"
 	"./Data"
-	"./Log"
+	"./Debug"
 	"log"
 	"runtime"
 	"time"
@@ -66,7 +66,7 @@ func start() error {
 		case re := <-moduleChannel["port:32376"]:
 			return re
 		case <-time.After(time.Minute * 10):
-			YoCLog.Log.Println("time tick :", time.Now())
+			YoCLog.DebugLogger.Println("time tick :", time.Now())
 		}
 	}
 	return err
@@ -75,7 +75,7 @@ func start() error {
 func exit(ec error) {
 	err := Data.StorageShutDown()
 	if err != nil {
-		YoCLog.Log.Println(err)
+		YoCLog.DebugLogger.Println(err)
 	}
 	YoCLog.LogExit(ec)
 }

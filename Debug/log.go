@@ -8,14 +8,14 @@ import (
 
 import "../EnvPath"
 
-var Log *log.Logger
+var DebugLogger *log.Logger
 var logFile *os.File
 
 func LogInit() error {
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Ltime)
 	logFile = openLog()
-	Log = log.New(logFile, "", log.LstdFlags|log.Lshortfile|log.Ltime)
-	Log.Println("---------------Log Start---------------")
+	DebugLogger = log.New(logFile, "", log.LstdFlags|log.Lshortfile|log.Ltime)
+	DebugLogger.Println("---------------Log Start---------------")
 	return nil
 }
 
@@ -24,11 +24,11 @@ func LogExit(ec error) {
 		_ = logFile.Close()
 	}()
 	if ec != nil {
-		Log.Println("exit with error", ec)
+		DebugLogger.Println("exit with error", ec)
 	} else {
-		Log.Println("normal exit")
+		DebugLogger.Println("normal exit")
 	}
-	Log.Println("---------------Log End----------------")
+	DebugLogger.Println("---------------Log End----------------")
 }
 
 func openLog() *os.File {
