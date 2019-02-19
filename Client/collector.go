@@ -92,7 +92,6 @@ func (collector *Collector) checkAccess() error {
 func (collector *Collector) verify(ch chan string) {
 	var bytes string
 	for len(ch) == 0 {
-		_ = collector.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
 		bytes, _ = collector.readWriter.ReadString(Pack.TailByte)
 		packet := Pack.Packet(bytes)
 		if len(packet) > 0 {
@@ -120,5 +119,4 @@ func (collector *Collector) verify(ch chan string) {
 			}
 		}
 	}
-	_ = collector.conn.SetReadDeadline(time.Time{})
 }
