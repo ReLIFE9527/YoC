@@ -42,6 +42,9 @@ func (gainer *Gainer) loop() {
 			if Pack.IsStreamValid(stream, []string{"test"}) {
 				gainer.testReceiver(stream)
 			}
+			if Pack.IsStreamValid(stream, []string{"stat"}) {
+				gainer.refreshLink(stream)
+			}
 		}
 	}
 }
@@ -91,8 +94,10 @@ func (gainer *Gainer) verify(ch chan string) {
 					} else {
 						if dataMap["password"] == gainer.password {
 							ch <- "success"
+							return
 						} else {
 							ch <- "fail"
+							return
 						}
 					}
 				}

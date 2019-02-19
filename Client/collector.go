@@ -36,6 +36,9 @@ func (collector *Collector) loop() {
 			if Pack.IsStreamValid(stream, []string{"test"}) {
 				collector.testReceiver(stream)
 			}
+			if Pack.IsStreamValid(stream, []string{"stat"}) {
+				collector.refreshLink(stream)
+			}
 		}
 	}
 }
@@ -106,6 +109,7 @@ func (collector *Collector) verify(ch chan string) {
 						collector.key = Data.GetKey(id)
 						if key, ok := (*table)["key"]; ok && collector.key != "" {
 							ch <- key
+							return
 						} else {
 							key = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
 							ch <- "nil"
@@ -113,6 +117,7 @@ func (collector *Collector) verify(ch chan string) {
 							//if collector.key=="" {
 							collector.key = key
 							//}
+							return
 						}
 					}
 				}
