@@ -51,16 +51,16 @@ func (gainer *Gainer) loop() {
 
 func (gainer *Gainer) checkAccess() error {
 	const loginPassword, loginAccess, loginFail Pack.Stream = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
-	err := gainer.writeRepeat(Pack.StreamPack(loginPassword), time.Second)
-	if err != nil {
-		return err
-	}
+	//err := gainer.writeRepeat(Pack.StreamPack(loginPassword), time.Second)
+	//if err != nil {
+	//	return err
+	//}
 	var access = make(chan string, 1)
 	go gainer.verify(access)
 	select {
 	case stat := <-access:
 		if stat == "success" {
-			err = gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
+			err := gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
 			return err
 		} else {
 			_ = gainer.writeRepeat(Pack.StreamPack(loginFail), time.Second)
