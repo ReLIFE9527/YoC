@@ -5,7 +5,7 @@ import (
 	"net"
 )
 
-type auFunc interface {
+type auditorFunc interface {
 	subInit() error
 	handle(net.Conn)
 	open()
@@ -13,18 +13,18 @@ type auFunc interface {
 }
 
 type Auditor struct {
-	auFunc
+	auditorFunc
 }
 
 type auditor struct {
-	auFunc
+	auditorFunc
 	listener         net.Listener
 	address, network string
 	conn             Connector
 }
 
-func (auditor *Auditor) Init(f auFunc) error {
-	auditor.auFunc = f
+func (auditor *Auditor) Init(f auditorFunc) error {
+	auditor.auditorFunc = f
 	err := auditor.subInit()
 	if err == nil {
 		auditor.open()

@@ -12,11 +12,11 @@ import (
 )
 
 type Connector struct {
-	cnFunc
+	connectorFunc
 }
 
-func (connector *Connector) Init(f cnFunc) {
-	connector.cnFunc = f
+func (connector *Connector) Init(f connectorFunc) {
+	connector.connectorFunc = f
 }
 
 func (connector *Connector) Handle(conn net.Conn) (err error) {
@@ -38,7 +38,7 @@ func (connector *Connector) Handle(conn net.Conn) (err error) {
 	return err
 }
 
-type cnFunc interface {
+type connectorFunc interface {
 	checkAccess() error
 	connectionHeartBeats()
 	eliminate()
@@ -51,7 +51,7 @@ type cnFunc interface {
 }
 
 type connector struct {
-	cnFunc
+	connectorFunc
 	addr       string
 	conn       net.Conn
 	readWriter *bufio.ReadWriter
