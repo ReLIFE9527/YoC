@@ -76,7 +76,7 @@ func StorageShutDown() error {
 
 const statUptTime = time.Second * 5
 const saveUpt = int64(time.Hour / statUptTime)
-const removeUpt = int64(time.Hour * 24 / statUptTime)
+const removeUpt = int64(time.Minute * 5 / statUptTime)
 
 var statUptCount int64
 
