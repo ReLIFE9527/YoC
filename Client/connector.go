@@ -1,7 +1,7 @@
 package Client
 
 import (
-	. "../Log"
+	. "../Debug"
 	"../Pack"
 	"bufio"
 	"encoding/json"
@@ -12,15 +12,15 @@ import (
 )
 
 type Connector struct {
-	cnFunc
+	connectorFunc
 }
 
-func (connector *Connector) Init(f cnFunc) {
-	connector.cnFunc = f
+func (connector *Connector) Init(f connectorFunc) {
+	connector.connectorFunc = f
 }
 
 func (connector *Connector) Handle(conn net.Conn) (err error) {
-	Log.Println(conn.RemoteAddr(), "trying to connect")
+	DebugLogger.Println(conn.RemoteAddr(), "trying to connect")
 	fmt.Println(conn.RemoteAddr(), "trying to connect")
 	connector.init(conn)
 	connector.extraInit()
@@ -38,7 +38,7 @@ func (connector *Connector) Handle(conn net.Conn) (err error) {
 	return err
 }
 
-type cnFunc interface {
+type connectorFunc interface {
 	checkAccess() error
 	connectionHeartBeats()
 	eliminate()
@@ -51,7 +51,7 @@ type cnFunc interface {
 }
 
 type connector struct {
-	cnFunc
+	connectorFunc
 	addr       string
 	conn       net.Conn
 	readWriter *bufio.ReadWriter
@@ -89,15 +89,15 @@ func (connector *connector) connectionHeartBeats() {
 func (connector *connector) eliminate() {
 	err := connector.clearReadBuffer()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 	err = connector.readWriter.Flush()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 	err = connector.conn.Close()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }
 
@@ -113,7 +113,7 @@ func (connector *connector) refreshLink(stream Pack.Stream) {
 	var statMap = make(map[string]string)
 	err := json.Unmarshal([]byte(stream), &statMap)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 		return
 	}
 	if stat, ok := statMap["stat"]; ok {
@@ -122,14 +122,14 @@ func (connector *connector) refreshLink(stream Pack.Stream) {
 			connector.refresh <- ""
 		case "close":
 			connector.stat = false
-			Log.Println(connector.addr, "close received")
+			DebugLogger.Println(connector.addr, "close received")
 		default:
 		}
 	}
 }
 
 func (connector *connector) testReceiver(stream Pack.Stream) {
-	Log.Println(stream)
+	DebugLogger.Println(stream)
 	fmt.Println(stream)
 	connector.refresh <- ""
 }
@@ -143,11 +143,11 @@ func (connector *connector) writeRepeat(packet Pack.Packet, t time.Duration) (er
 			_ = connector.conn.SetWriteDeadline(time.Now().Add(t))
 			_, err = connector.readWriter.WriteString(string(packet))
 			if err != nil {
-				Log.Println(err)
+				DebugLogger.Println(err)
 			}
 			err = connector.readWriter.Flush()
 			if err != nil && err != io.EOF {
-				Log.Println(err)
+				DebugLogger.Println(err)
 				count++
 			} else {
 				break

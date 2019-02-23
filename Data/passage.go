@@ -1,7 +1,7 @@
 package Data
 
 import (
-	. "../Log"
+	. "../Debug"
 	"time"
 )
 
@@ -30,10 +30,11 @@ func online(id, key string) {
 	if coStats[id] == nil {
 		coStats[id] = new(stat)
 		coStats[id].Data = new(repository)
+		coStats[id].Data.Saved = false
+		coStats[id].Data.ID = id
+		coStats[id].Data.Key = key
 	}
 	coStats[id].isOnline = true
-	coStats[id].Data.ID = id
-	coStats[id].Data.Key = key
 	coStats[id].Data.LastLogin = time.Now()
 }
 
@@ -46,22 +47,22 @@ func update(id string) {
 	if coStats[id] != nil {
 		coStats[id].Data.LastLogin = time.Now()
 	} else {
-		Log.Println("can not find target id : ", id)
+		DebugLogger.Println("can not find target id : ", id)
 	}
 }
 
 func removeOutDate() {
 	for i, device := range coStats {
 		if !device.isOnline {
-			var t1, t2 = time.Now(), device.Data.LastLogin.AddDate(0, 0, 15)
-			if (t1.YearDay() > t2.YearDay() && t1.Year() == t2.YearDay()) || t1.Year() > t2.Year() {
+			var t1, t2 = time.Now(), device.Data.LastLogin
+			if t1.After(t2.AddDate(0, 0, 15)) || (!device.Data.Saved && t1.After(t2.Add(time.Minute*5))) {
 				coStats[i] = nil
 			}
 		}
 	}
 	err := passageSave()
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }
 
