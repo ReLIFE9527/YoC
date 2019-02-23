@@ -59,12 +59,13 @@ func (collector *Collector) postAction() {
 }
 
 func (collector *Collector) checkAccess() error {
-	const loginFailed, loginDone Pack.Stream = "{\"login\":\"failed\"}", "{\"login\":\"done\"}"
+	const loginFailed, loginDone, loginFailed2 Pack.Stream = "{\"login\":\"failed\"}", "{\"login\":\"done\"}", "{\"login\":\"ID is used by other devices\"}"
 	var access = make(chan string, 1)
 	go collector.verify(access)
 	select {
 	case key := <-access:
-		if key == "nil" {
+		switch key {
+		case "nil":
 			stream := Pack.Convert2Stream(&map[string]string{"key": collector.key})
 			packet := Pack.StreamPack(stream)
 			err := collector.writeRepeat(packet, time.Second)
@@ -73,14 +74,15 @@ func (collector *Collector) checkAccess() error {
 			}
 			err = collector.writeRepeat(Pack.StreamPack(loginDone), time.Second)
 			return err
-		} else {
-			if key == collector.key {
-				err := collector.writeRepeat(Pack.StreamPack(loginDone), time.Second)
-				return err
-			} else {
-				_ = collector.writeRepeat(Pack.StreamPack(loginFailed), time.Second)
-				return io.EOF
-			}
+		case "no key":
+			_ = collector.writeRepeat(Pack.StreamPack(loginFailed2), time.Second)
+			return io.EOF
+		case collector.key:
+			err := collector.writeRepeat(Pack.StreamPack(loginDone), time.Second)
+			return err
+		default:
+			_ = collector.writeRepeat(Pack.StreamPack(loginFailed), time.Second)
+			return io.EOF
 		}
 	case <-time.After(time.Second * 10):
 		go func() {
@@ -112,11 +114,13 @@ func (collector *Collector) verify(ch chan string) {
 							return
 						} else {
 							key = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
-							ch <- "nil"
-							//override the key
-							//if collector.key=="" {
-							collector.key = key
-							//}
+							if collector.key == "" {
+								//override the key
+								collector.key = key
+								ch <- "nil"
+							} else {
+								ch <- "no key"
+							}
 							return
 						}
 					}
