@@ -58,7 +58,7 @@ func StorageStart(ch chan error) {
 				ch <- ""
 			}(chanMap["deviceUpt"])
 		case <-chanMap["remove"]:
-			var remove= make(chan string, 1)
+			var remove = make(chan string, 1)
 			go func(ch chan string) {
 				removeCheck()
 				ch <- ""
@@ -113,20 +113,12 @@ func CollectorLogout(device string) {
 	chanMap["save"] <- ""
 }
 
-func CollectorRegister(addr string, operation string, function interface{}) {
-	collectorMap[addr][operation] = function
-}
-
 func GainerLogin(client string) {
 	gainerMap[client] = make(map[string]interface{})
 }
 
 func GainerLogout(client string) {
 	delete(gainerMap, client)
-}
-
-func GainerRegister(addr string, operation string, function interface{}) {
-	gainerMap[addr][operation] = function
 }
 
 func chanInit() {
