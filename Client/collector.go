@@ -27,17 +27,17 @@ func (collector *Collector) loop() {
 		if len(packet) > 0 {
 			stream, err := Pack.DePack(packet)
 			if err != nil {
-				return
-			}
-			fmt.Println(stream)
-			if Pack.IsStreamValid(stream, []string{"operation"}) {
-				//TODO
-			}
-			if Pack.IsStreamValid(stream, []string{"test"}) {
-				collector.testReceiver(stream)
-			}
-			if Pack.IsStreamValid(stream, []string{"stat"}) {
-				collector.refreshLink(stream)
+				DebugLogger.Println(packet, err)
+			} else {
+				if Pack.IsStreamValid(stream, []string{"operation"}) {
+					//TODO
+				}
+				if Pack.IsStreamValid(stream, []string{"test"}) {
+					collector.testReceiver(stream)
+				}
+				if Pack.IsStreamValid(stream, []string{"stat"}) {
+					collector.refreshLink(stream)
+				}
 			}
 		}
 	}
