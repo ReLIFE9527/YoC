@@ -2,7 +2,7 @@ package Client
 
 import (
 	"../Data"
-	. "../Debug"
+	. "../Log"
 	"../Pack"
 	"encoding/json"
 	"io"
@@ -22,7 +22,7 @@ func (gainer *Gainer) switcher(stream Pack.Stream) {
 		case "getOnlineList":
 			gainer.getOnline()
 		default:
-			DebugLogger.Println("unknown operation : ", action)
+			Log.Println("unknown operation : ", action)
 		}
 	}
 }
@@ -34,7 +34,7 @@ func (gainer *Gainer) loop() {
 		gainer.refresh <- ""
 		stream, err := Pack.DePack(packet)
 		if err != nil {
-			DebugLogger.Println(packet, err)
+			Log.Println(err)
 		} else {
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				//TODO
@@ -51,16 +51,16 @@ func (gainer *Gainer) loop() {
 
 func (gainer *Gainer) checkAccess() error {
 	const loginPassword, loginAccess, loginFail Pack.Stream = "{\"login\":\"password\"}", "{\"login\":\"access\"}", "{\"login\":\"failed\"}"
-	//err := gainer.writeRepeat(Pack.StreamPack(loginPassword), time.Second)
-	//if err != nil {
-	//	return err
-	//}
+	err := gainer.writeRepeat(Pack.StreamPack(loginPassword), time.Second)
+	if err != nil {
+		return err
+	}
 	var access = make(chan string, 1)
 	go gainer.verify(access)
 	select {
 	case stat := <-access:
 		if stat == "success" {
-			err := gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
+			err = gainer.writeRepeat(Pack.StreamPack(loginAccess), time.Second)
 			return err
 		} else {
 			_ = gainer.writeRepeat(Pack.StreamPack(loginFail), time.Second)
@@ -84,13 +84,13 @@ func (gainer *Gainer) verify(ch chan string) {
 		if len(packet) > 0 {
 			stream, err := Pack.DePack(packet)
 			if err != nil {
-				DebugLogger.Println(err)
+				Log.Println(err)
 			} else {
 				if Pack.IsStreamValid(stream, []string{"password"}) {
 					var dataMap = make(map[string]string)
 					err = json.Unmarshal([]byte(stream), &dataMap)
 					if err != nil {
-						DebugLogger.Println(err)
+						Log.Println(err)
 					} else {
 						if dataMap["password"] == gainer.password {
 							ch <- "success"
@@ -108,12 +108,12 @@ func (gainer *Gainer) verify(ch chan string) {
 
 func (gainer *Gainer) preAction() {
 	Data.GainerLogin(gainer.addr)
-	DebugLogger.Println(gainer.addr, " : gainer connected")
+	Log.Println(gainer.addr, " : gainer connected")
 }
 
 func (gainer *Gainer) postAction() {
 	Data.GainerLogout(gainer.addr)
-	DebugLogger.Println(gainer.addr, " : gainer disconnected")
+	Log.Println(gainer.addr, " : gainer disconnected")
 }
 
 func (gainer *Gainer) getOnline() {
@@ -126,6 +126,6 @@ func (gainer *Gainer) getOnline() {
 	packet := Pack.StreamPack(stream)
 	err := gainer.writeRepeat(packet, time.Second)
 	if err != nil {
-		DebugLogger.Println(err)
+		Log.Println(err)
 	}
 }

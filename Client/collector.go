@@ -2,7 +2,7 @@ package Client
 
 import (
 	"../Data"
-	. "../Debug"
+	. "../Log"
 	"../Pack"
 	"crypto/sha1"
 	"fmt"
@@ -27,17 +27,17 @@ func (collector *Collector) loop() {
 		if len(packet) > 0 {
 			stream, err := Pack.DePack(packet)
 			if err != nil {
-				DebugLogger.Println(packet, err)
-			} else {
-				if Pack.IsStreamValid(stream, []string{"operation"}) {
-					//TODO
-				}
-				if Pack.IsStreamValid(stream, []string{"test"}) {
-					collector.testReceiver(stream)
-				}
-				if Pack.IsStreamValid(stream, []string{"stat"}) {
-					collector.refreshLink(stream)
-				}
+				return
+			}
+			fmt.Println(stream)
+			if Pack.IsStreamValid(stream, []string{"operation"}) {
+				//TODO
+			}
+			if Pack.IsStreamValid(stream, []string{"test"}) {
+				collector.testReceiver(stream)
+			}
+			if Pack.IsStreamValid(stream, []string{"stat"}) {
+				collector.refreshLink(stream)
 			}
 		}
 	}
@@ -49,23 +49,22 @@ func (collector *Collector) extraInit() {
 
 func (collector *Collector) preAction() {
 	Data.CollectorLogin(collector.id, collector.key)
-	DebugLogger.Println(collector.addr, " : collector connected")
-	DebugLogger.Println("id : ", collector.id)
+	Log.Println(collector.addr, " : collector connected")
+	Log.Println("id : ", collector.id)
 }
 
 func (collector *Collector) postAction() {
 	Data.CollectorLogout(collector.id)
-	DebugLogger.Println(collector.addr, " : collector disconnected")
+	Log.Println(collector.addr, " : collector disconnected")
 }
 
 func (collector *Collector) checkAccess() error {
-	const loginFailed, loginDone, loginFailed2 Pack.Stream = "{\"login\":\"failed\"}", "{\"login\":\"done\"}", "{\"login\":\"ID is used by other devices\"}"
+	const loginFailed, loginDone Pack.Stream = "{\"login\":\"failed\"}", "{\"login\":\"done\"}"
 	var access = make(chan string, 1)
 	go collector.verify(access)
 	select {
 	case key := <-access:
-		switch key {
-		case "nil":
+		if key == "nil" {
 			stream := Pack.Convert2Stream(&map[string]string{"key": collector.key})
 			packet := Pack.StreamPack(stream)
 			err := collector.writeRepeat(packet, time.Second)
@@ -74,15 +73,14 @@ func (collector *Collector) checkAccess() error {
 			}
 			err = collector.writeRepeat(Pack.StreamPack(loginDone), time.Second)
 			return err
-		case "no key":
-			_ = collector.writeRepeat(Pack.StreamPack(loginFailed2), time.Second)
-			return io.EOF
-		case collector.key:
-			err := collector.writeRepeat(Pack.StreamPack(loginDone), time.Second)
-			return err
-		default:
-			_ = collector.writeRepeat(Pack.StreamPack(loginFailed), time.Second)
-			return io.EOF
+		} else {
+			if key == collector.key {
+				err := collector.writeRepeat(Pack.StreamPack(loginDone), time.Second)
+				return err
+			} else {
+				_ = collector.writeRepeat(Pack.StreamPack(loginFailed), time.Second)
+				return io.EOF
+			}
 		}
 	case <-time.After(time.Second * 10):
 		go func() {
@@ -102,7 +100,7 @@ func (collector *Collector) verify(ch chan string) {
 		if len(packet) > 0 {
 			stream, err := Pack.DePack(packet)
 			if err != nil {
-				DebugLogger.Println(err)
+				Log.Println(err)
 			} else {
 				if Pack.IsStreamValid(stream, []string{"id"}) {
 					var table = Pack.Convert2Map(stream)
@@ -114,13 +112,11 @@ func (collector *Collector) verify(ch chan string) {
 							return
 						} else {
 							key = fmt.Sprintf("%x", sha1.Sum([]byte(time.Now().String())))
-							if collector.key == "" {
-								//override the key
-								collector.key = key
-								ch <- "nil"
-							} else {
-								ch <- "no key"
-							}
+							ch <- "nil"
+							//override the key
+							//if collector.key=="" {
+							collector.key = key
+							//}
 							return
 						}
 					}
