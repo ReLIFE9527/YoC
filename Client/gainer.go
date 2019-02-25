@@ -34,7 +34,7 @@ func (gainer *Gainer) loop() {
 		gainer.refresh <- ""
 		stream, err := Pack.DePack(packet)
 		if err != nil {
-			DebugLogger.Println(err)
+			DebugLogger.Println(packet, err)
 		} else {
 			if Pack.IsStreamValid(stream, []string{"operation"}) {
 				//TODO
