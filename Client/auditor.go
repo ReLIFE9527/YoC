@@ -20,7 +20,6 @@ type auditor struct {
 	auditorFunc
 	listener         net.Listener
 	address, network string
-	conn             Connector
 }
 
 func (auditor *Auditor) Init(f auditorFunc) error {
@@ -89,8 +88,9 @@ func (auditor *Auditor32375) subInit() error {
 }
 
 func (auditor *Auditor32375) handle(conn net.Conn) {
-	auditor.conn.Init(new(Collector))
-	err := auditor.conn.Handle(conn)
+	var cn Connector
+	cn.Init(new(Collector))
+	err := cn.Handle(conn)
 	if err != nil {
 		DebugLogger.Println(err)
 	}
@@ -108,8 +108,9 @@ func (auditor *Auditor32376) subInit() error {
 }
 
 func (auditor *Auditor32376) handle(conn net.Conn) {
-	auditor.conn.Init(&Gainer{password: auditor.Password})
-	err := auditor.conn.Handle(conn)
+	var cn Connector
+	cn.Init(&Gainer{password: auditor.Password})
+	err := cn.Handle(conn)
 	if err != nil {
 		DebugLogger.Println(err)
 	}
