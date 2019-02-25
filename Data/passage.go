@@ -57,6 +57,7 @@ func removeOutDate() {
 			var t1, t2 = time.Now(), device.Data.LastLogin
 			if t1.After(t2.AddDate(0, 0, 15)) || (!device.Data.Saved && t1.After(t2.Add(time.Minute*5))) {
 				coStats[i] = nil
+				delete(coStats, i)
 			}
 		}
 	}
