@@ -1,8 +1,8 @@
 package Data
 
 import (
+	. "../Debug"
 	"../EnvPath"
-	. "../Log"
 	"bufio"
 	"encoding/json"
 	"errors"
@@ -34,7 +34,7 @@ func JsonRead(table *map[string]*stat) error {
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		if os.IsNotExist(err) {
-			defer Log.Println("json file not exist")
+			defer DebugLogger.Println("json file not exist")
 			return jsonErrEmpty
 		} else {
 			return err
@@ -103,7 +103,7 @@ func ReadGlobal(global *map[string]string) (err error) {
 	}
 	err = json.Unmarshal(bytes, &data)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 	if ps, ok := data["Password"]; !ok || ps == "" {
 		data["Password"] = "YoCProject"

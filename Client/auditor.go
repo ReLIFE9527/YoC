@@ -1,11 +1,11 @@
 package Client
 
 import (
-	. "../Log"
+	. "../Debug"
 	"net"
 )
 
-type auFunc interface {
+type auditorFunc interface {
 	subInit() error
 	handle(net.Conn)
 	open()
@@ -13,18 +13,17 @@ type auFunc interface {
 }
 
 type Auditor struct {
-	auFunc
+	auditorFunc
 }
 
 type auditor struct {
-	auFunc
+	auditorFunc
 	listener         net.Listener
 	address, network string
-	conn             Connector
 }
 
-func (auditor *Auditor) Init(f auFunc) error {
-	auditor.auFunc = f
+func (auditor *Auditor) Init(f auditorFunc) error {
+	auditor.auditorFunc = f
 	err := auditor.subInit()
 	if err == nil {
 		auditor.open()
@@ -38,7 +37,7 @@ func (auditor *Auditor) Listen(errCh chan error) {
 	for len(errCh) == 0 {
 		select {
 		case conn := <-handle:
-			auditor.handle(conn)
+			go auditor.handle(conn)
 			//case <-time.After(time.Millisecond * 100):
 		}
 	}
@@ -58,7 +57,7 @@ func (auditor *auditor) open() {
 	var err error
 	auditor.listener, err = net.Listen(auditor.network, auditor.address)
 	if err == nil {
-		Log.Println(auditor.network, auditor.address, "Waiting for connection...")
+		DebugLogger.Println(auditor.network, auditor.address, "Waiting for connection...")
 	}
 }
 
@@ -73,8 +72,8 @@ func (auditor *auditor) listen(errCh chan error, handle chan net.Conn) {
 	}
 	defer func() {
 		err := auditor.listener.Close()
-		Log.Println(err)
-		Log.Println(auditor.network, auditor.address, "listener closed.")
+		DebugLogger.Println(err)
+		DebugLogger.Println(auditor.network, auditor.address, "listener closed.")
 	}()
 }
 
@@ -89,10 +88,11 @@ func (auditor *Auditor32375) subInit() error {
 }
 
 func (auditor *Auditor32375) handle(conn net.Conn) {
-	auditor.conn.Init(new(Collector))
-	err := auditor.conn.Handle(conn)
+	var cn Connector
+	cn.Init(new(Collector))
+	err := cn.Handle(conn)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }
 
@@ -108,9 +108,10 @@ func (auditor *Auditor32376) subInit() error {
 }
 
 func (auditor *Auditor32376) handle(conn net.Conn) {
-	auditor.conn.Init(&Gainer{password: auditor.Password})
-	err := auditor.conn.Handle(conn)
+	var cn Connector
+	cn.Init(&Gainer{password: auditor.Password})
+	err := cn.Handle(conn)
 	if err != nil {
-		Log.Println(err)
+		DebugLogger.Println(err)
 	}
 }

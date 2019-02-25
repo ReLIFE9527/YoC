@@ -8,4 +8,5 @@ type repository struct {
 	ID        string
 	Key       string
 	LastLogin time.Time
+	Saved     bool
 }

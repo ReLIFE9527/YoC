@@ -31,10 +31,10 @@ var appDir = func() string {
 		log.Fatal("operation system type err: " + runtime.GOOS)
 		return ""
 	}
-}
+}()
 
 func GetAppDir() string {
-	return appDir()
+	return appDir
 }
 
 func GetParentDir(srcPath string) (dstPath string, err error) {
