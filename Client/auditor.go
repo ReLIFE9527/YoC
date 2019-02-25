@@ -38,7 +38,7 @@ func (auditor *Auditor) Listen(errCh chan error) {
 	for len(errCh) == 0 {
 		select {
 		case conn := <-handle:
-			auditor.handle(conn)
+			go auditor.handle(conn)
 			//case <-time.After(time.Millisecond * 100):
 		}
 	}
